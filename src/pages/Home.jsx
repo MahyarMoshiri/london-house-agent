@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Filter, MapPin, Bed, Bath, Calendar, Phone, Mail, ArrowRight, Star, Share2, X, Check } from 'lucide-react'
+import { Search, Filter, MapPin, Bed, Bath, Calendar, Phone, Mail, ArrowRight, Star, Share2, X, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-function Home({ properties }) {
+function Home({ properties, isLoading, error, onRetry }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [priceFilter, setPriceFilter] = useState('')
   const [bedroomFilter, setBedroomFilter] = useState('')
@@ -11,9 +11,14 @@ function Home({ properties }) {
   const [showShareModal, setShowShareModal] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
 
+  const propertiesList = useMemo(() => {
+    return Array.isArray(properties) ? properties : []
+  }, [properties])
+  const totalProperties = propertiesList.length
+
   // Filter properties based on search and filters
   const filteredProperties = useMemo(() => {
-    return properties.filter(property => {
+    return propertiesList.filter(property => {
       const matchesSearch = !searchTerm || 
         property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -32,7 +37,7 @@ function Home({ properties }) {
 
       return matchesSearch && matchesPrice && matchesBedrooms
     })
-  }, [properties, searchTerm, priceFilter, bedroomFilter])
+  }, [propertiesList, searchTerm, priceFilter, bedroomFilter])
 
   const clearFilters = () => {
     setSearchTerm('')
@@ -43,7 +48,7 @@ function Home({ properties }) {
   const handleSharePortfolio = async () => {
     const url = window.location.href
     const title = 'London House Agent - Property Portfolio'
-    const text = `Check out our premium property portfolio with ${properties.length} available properties in London.`
+    const text = `Check out our premium property portfolio with ${totalProperties} available properties in London.`
     
     if (navigator.share) {
       try {
@@ -212,12 +217,15 @@ Best regards`)
             <div>
               <h2 className="lha-heading-lg">Available Properties</h2>
               <p className="text-gray-600 mt-2">
-                {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'} found
-                {searchTerm && ` for "${searchTerm}"`}
+                {isLoading
+                  ? 'Loading properties...'
+                  : error
+                    ? 'Unable to load properties. Please try again.'
+                    : `${filteredProperties.length} ${filteredProperties.length === 1 ? 'property' : 'properties'} found${searchTerm ? ` for "${searchTerm}"` : ''}`}
               </p>
             </div>
             
-            {filteredProperties.length > 0 && (
+            {!isLoading && !error && filteredProperties.length > 0 && (
               <div className="flex items-center space-x-4">
                 <Button 
                   onClick={handleSharePortfolio}
@@ -242,7 +250,32 @@ Best regards`)
           </div>
 
           {/* Properties Grid */}
-          {filteredProperties.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+                </div>
+                <h3 className="lha-heading-sm mb-4">Loading Properties</h3>
+                <p className="text-gray-600">Fetching the latest listings from Supabase.</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <AlertTriangle className="w-10 h-10 text-red-500" />
+                </div>
+                <h3 className="lha-heading-sm mb-4">Unable to Load Properties</h3>
+                <p className="text-gray-600 mb-6">{error}</p>
+                {onRetry && (
+                  <Button onClick={onRetry} className="lha-button-primary">
+                    Retry
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : filteredProperties.length === 0 ? (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">

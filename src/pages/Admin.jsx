@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
-import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, Link2 } from 'lucide-react'
+import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, Link2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { isSupabaseConfigured, uploadPropertyImages } from '@/lib/supabaseStorage'
 
-function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin }) {
+function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin, isLoading, error, onReload }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState('')
@@ -22,6 +22,9 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   })
   const fileInputRef = useRef(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -42,6 +45,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     setPassword('')
     setShowAddForm(false)
     setEditingProperty(null)
+    setActionError('')
     resetForm()
   }
 
@@ -94,6 +98,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       }
 
       setIsUploading(true)
+      setActionError('')
       const uploadedUrls = await uploadPropertyImages(files)
       setFormData(prev => ({
         ...prev,
@@ -101,7 +106,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       }))
     } catch (error) {
       console.error('Image upload failed:', error)
-      alert(error.message || 'Image upload failed. Please try again.')
+      setActionError(error.message || 'Image upload failed. Please try again.')
     } finally {
       setIsUploading(false)
       if (input) {
@@ -134,9 +139,9 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     const propertyData = {
       ...formData,
       price: parseFloat(formData.price) || 0,
@@ -144,15 +149,25 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       bathrooms: parseInt(formData.bathrooms) || 0
     }
 
-    if (editingProperty) {
-      updateProperty(editingProperty.id, propertyData)
-      setEditingProperty(null)
-    } else {
-      addProperty(propertyData)
-      setShowAddForm(false)
+    setActionError('')
+    setIsSaving(true)
+
+    try {
+      if (editingProperty) {
+        await updateProperty(editingProperty.id, propertyData)
+        setEditingProperty(null)
+      } else {
+        await addProperty(propertyData)
+        setShowAddForm(false)
+      }
+
+      resetForm()
+    } catch (error) {
+      console.error('Failed to save property:', error)
+      setActionError(error.message || 'Failed to save property. Please try again.')
+    } finally {
+      setIsSaving(false)
     }
-    
-    resetForm()
   }
 
   const handleEdit = (property) => {
@@ -171,9 +186,21 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     setShowAddForm(false)
   }
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this property?')) {
-      deleteProperty(id)
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this property?')) {
+      return
+    }
+
+    setActionError('')
+    setDeletingId(id)
+
+    try {
+      await deleteProperty(id)
+    } catch (error) {
+      console.error('Failed to delete property:', error)
+      setActionError(error.message || 'Failed to delete property. Please try again.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -259,14 +286,35 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {properties.length} {properties.length === 1 ? 'Property' : 'Properties'}
+                {isLoading
+                  ? 'Loading properties...'
+                  : `${properties.length} ${properties.length === 1 ? 'Property' : 'Properties'}`}
               </span>
+              {onReload && (
+                <Button
+                  onClick={onReload}
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoading}
+                  className="flex items-center space-x-1"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </Button>
+              )}
               <Button onClick={handleLogout} variant="outline" className="text-red-600 border-red-600 hover:bg-red-50">
                 Logout
               </Button>
             </div>
           </div>
         </div>
+
+        {actionError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-8 text-sm flex items-start space-x-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5" />
+            <span>{actionError}</span>
+          </div>
+        )}
 
         {/* Add Property Button */}
         {!showAddForm && !editingProperty && (
@@ -521,12 +569,27 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                   type="button"
                   onClick={editingProperty ? cancelEdit : cancelAdd}
                   variant="outline"
+                  disabled={isSaving}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="lha-button-primary flex items-center space-x-2">
-                  <Save className="w-4 h-4" />
-                  <span>{editingProperty ? 'Update Property' : 'Add Property'}</span>
+                <Button 
+                  type="submit" 
+                  className="lha-button-primary flex items-center space-x-2"
+                  disabled={isSaving || isUploading}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isSaving
+                      ? 'Saving...'
+                      : editingProperty
+                        ? 'Update Property'
+                        : 'Add Property'}
+                  </span>
                 </Button>
               </div>
             </form>
@@ -539,7 +602,29 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
             <h2 className="lha-heading-md">Property Management</h2>
           </div>
           
-          {properties.length === 0 ? (
+          {error ? (
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-900 mb-3">Unable to load properties</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              {onReload && (
+                <Button
+                  onClick={onReload}
+                  className="lha-button-primary flex items-center space-x-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Retry</span>
+                </Button>
+              )}
+            </div>
+          ) : isLoading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="w-8 h-8 text-gray-400 animate-spin mx-auto" />
+              <p className="text-gray-600 mt-4">Loading properties...</p>
+            </div>
+          ) : properties.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500">No properties added yet.</p>
               <Button 
@@ -585,6 +670,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                         variant="outline"
                         size="sm"
                         className="flex items-center space-x-1"
+                        disabled={deletingId === property.id}
                       >
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
@@ -594,9 +680,19 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                         variant="outline"
                         size="sm"
                         className="text-red-600 border-red-600 hover:bg-red-50 flex items-center space-x-1"
+                        disabled={deletingId === property.id}
                       >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Delete</span>
+                        {deletingId === property.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Deleting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>

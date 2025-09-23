@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 
 // Components
@@ -8,115 +8,77 @@ import Footer from './components/Footer'
 import Home from './pages/Home'
 import PropertyDetail from './pages/PropertyDetail'
 import Admin from './pages/Admin'
-
-// Custom hook for managing properties in localStorage
-function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
-    } catch (error) {
-      console.error('Error reading from localStorage:', error)
-      return initialValue
-    }
-  })
-
-  const setValue = (value) => {
-    try {
-      setStoredValue(value)
-      window.localStorage.setItem(key, JSON.stringify(value))
-    } catch (error) {
-      console.error('Error writing to localStorage:', error)
-    }
-  }
-
-  return [storedValue, setValue]
-}
+import { 
+  fetchProperties,
+  createProperty,
+  updatePropertyRecord,
+  removeProperty,
+  isSupabaseDataConfigured
+} from './lib/supabaseProperties'
 
 function App() {
-  const [properties, setProperties] = useLocalStorage('lha-properties', [])
+  const [properties, setProperties] = useState([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true)
+  const [propertiesError, setPropertiesError] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // Sample properties for demonstration
+  const loadProperties = useCallback(async () => {
+    setIsLoadingProperties(true)
+    setPropertiesError('')
+
+    if (!isSupabaseDataConfigured) {
+      setProperties([])
+      setPropertiesError('Supabase is not configured. Please update your environment variables to enable property management.')
+      setIsLoadingProperties(false)
+      return
+    }
+
+    try {
+      const data = await fetchProperties()
+      setProperties(data)
+    } catch (error) {
+      console.error('Failed to fetch properties:', error)
+      setPropertiesError(error.message || 'Failed to fetch properties.')
+    } finally {
+      setIsLoadingProperties(false)
+    }
+  }, [])
+
   useEffect(() => {
-    if (properties.length === 0) {
-      const sampleProperties = [
-        {
-          id: '1',
-          title: 'Luxury 2-Bedroom Apartment in Canary Wharf',
-          description: 'Stunning modern apartment with panoramic views of the Thames. Features include floor-to-ceiling windows, premium finishes, and access to building amenities including gym and concierge.',
-          price: 3500,
-          address: 'Canary Wharf, London E14',
-          bedrooms: 2,
-          bathrooms: 2,
-          availability: 'Available Now',
-          images: [
-            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=600&fit=crop'
-          ],
-          features: ['Gym', 'Concierge', 'River Views', 'Balcony', 'Parking'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'Victorian House in Notting Hill',
-          description: 'Charming Victorian terraced house in the heart of Notting Hill. Recently renovated while maintaining original period features. Perfect for families or professionals.',
-          price: 5200,
-          address: 'Notting Hill, London W11',
-          bedrooms: 3,
-          bathrooms: 2,
-          availability: 'Available from January',
-          images: [
-            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1513584684374-8bab748fbf90?w=800&h=600&fit=crop'
-          ],
-          features: ['Garden', 'Period Features', 'Recently Renovated', 'Near Tube'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '3',
-          title: 'Modern Studio in Shoreditch',
-          description: 'Contemporary studio apartment in trendy Shoreditch. Open-plan living with modern kitchen and bathroom. Perfect for young professionals.',
-          price: 1800,
-          address: 'Shoreditch, London E1',
-          bedrooms: 0,
-          bathrooms: 1,
-          availability: 'Available Now',
-          images: [
-            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop'
-          ],
-          features: ['Modern Kitchen', 'High Ceilings', 'Near Transport', 'Trendy Area'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]
-      setProperties(sampleProperties)
+    loadProperties()
+  }, [loadProperties])
+
+  const addProperty = useCallback(async (property) => {
+    try {
+      const newProperty = await createProperty(property)
+      setProperties(prev => [newProperty, ...prev])
+      return newProperty
+    } catch (error) {
+      console.error('Failed to create property:', error)
+      throw error
     }
-  }, [properties.length, setProperties])
+  }, [])
 
-  const addProperty = (property) => {
-    const newProperty = {
-      ...property,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  const updateProperty = useCallback(async (id, updatedProperty) => {
+    try {
+      const savedProperty = await updatePropertyRecord(id, updatedProperty)
+      setProperties(prev => prev.map(prop => (prop.id === id ? savedProperty : prop)))
+      return savedProperty
+    } catch (error) {
+      console.error('Failed to update property:', error)
+      throw error
     }
-    setProperties([...properties, newProperty])
-  }
+  }, [])
 
-  const updateProperty = (id, updatedProperty) => {
-    setProperties(properties.map(prop => 
-      prop.id === id 
-        ? { ...updatedProperty, id, updatedAt: new Date().toISOString() }
-        : prop
-    ))
-  }
-
-  const deleteProperty = (id) => {
-    setProperties(properties.filter(prop => prop.id !== id))
-  }
+  const deleteProperty = useCallback(async (id) => {
+    try {
+      await removeProperty(id)
+      setProperties(prev => prev.filter(prop => prop.id !== id))
+    } catch (error) {
+      console.error('Failed to delete property:', error)
+      throw error
+    }
+  }, [])
 
   return (
     <Router>
@@ -131,11 +93,18 @@ function App() {
             />
             <Route 
               path="/properties" 
-              element={<Home properties={properties} />} 
+              element={
+                <Home 
+                  properties={properties}
+                  isLoading={isLoadingProperties}
+                  error={propertiesError}
+                  onRetry={loadProperties}
+                />
+              } 
             />
             <Route 
               path="/property/:id" 
-              element={<PropertyDetail properties={properties} />} 
+              element={<PropertyDetail properties={properties} isLoading={isLoadingProperties} />} 
             />
             <Route 
               path="/admin" 
@@ -147,6 +116,9 @@ function App() {
                   deleteProperty={deleteProperty}
                   isAdmin={isAdmin}
                   setIsAdmin={setIsAdmin}
+                  isLoading={isLoadingProperties}
+                  error={propertiesError}
+                  onReload={loadProperties}
                 />
               } 
             />

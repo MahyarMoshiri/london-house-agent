@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { 
   ArrowLeft, 
   MapPin, 
@@ -15,29 +15,60 @@ import {
   X,
   Check,
   Star,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-function PropertyDetail({ properties }) {
+function PropertyDetail({ properties, isLoading }) {
   const { id } = useParams()
-  const navigate = useNavigate()
   const [property, setProperty] = useState(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showImageModal, setShowImageModal] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [hasChecked, setHasChecked] = useState(false)
 
   useEffect(() => {
+    if (isLoading) {
+      return
+    }
+
     const foundProperty = properties.find(p => p.id === id)
+
     if (foundProperty) {
       setProperty(foundProperty)
     } else {
-      // Property not found, redirect to properties list
-      navigate('/properties')
+      setProperty(null)
     }
-  }, [id, properties, navigate])
+
+    setHasChecked(true)
+  }, [id, properties, isLoading])
+
+  useEffect(() => {
+    if (isLoading) {
+      setHasChecked(false)
+    }
+  }, [isLoading])
+
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [property?.id])
+
+  if (!hasChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Property</h2>
+          <p className="text-gray-600">Fetching the latest information.</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!property) {
     return (
