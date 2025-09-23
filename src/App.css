@@ -1,0 +1,259 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  
+  /* London House Agent Brand Colors */
+  --lha-yellow: #FFCC00;
+  --lha-black: #000000;
+  --lha-white: #FFFFFF;
+  --lha-gray-light: #F8F9FA;
+  --lha-gray-medium: #6C757D;
+  --lha-gray-dark: #343A40;
+  
+  /* Updated theme colors using brand palette */
+  --background: var(--lha-white);
+  --foreground: var(--lha-black);
+  --card: var(--lha-white);
+  --card-foreground: var(--lha-black);
+  --popover: var(--lha-white);
+  --popover-foreground: var(--lha-black);
+  --primary: var(--lha-yellow);
+  --primary-foreground: var(--lha-black);
+  --secondary: var(--lha-gray-light);
+  --secondary-foreground: var(--lha-black);
+  --muted: var(--lha-gray-light);
+  --muted-foreground: var(--lha-gray-medium);
+  --accent: var(--lha-yellow);
+  --accent-foreground: var(--lha-black);
+  --destructive: #dc3545;
+  --border: #e9ecef;
+  --input: #e9ecef;
+  --ring: var(--lha-yellow);
+  --chart-1: var(--lha-yellow);
+  --chart-2: var(--lha-gray-medium);
+  --chart-3: var(--lha-gray-dark);
+  --chart-4: #28a745;
+  --chart-5: #17a2b8;
+  --sidebar: var(--lha-white);
+  --sidebar-foreground: var(--lha-black);
+  --sidebar-primary: var(--lha-yellow);
+  --sidebar-primary-foreground: var(--lha-black);
+  --sidebar-accent: var(--lha-gray-light);
+  --sidebar-accent-foreground: var(--lha-black);
+  --sidebar-border: #e9ecef;
+  --sidebar-ring: var(--lha-yellow);
+}
+
+.dark {
+  --background: var(--lha-black);
+  --foreground: var(--lha-white);
+  --card: var(--lha-gray-dark);
+  --card-foreground: var(--lha-white);
+  --popover: var(--lha-gray-dark);
+  --popover-foreground: var(--lha-white);
+  --primary: var(--lha-yellow);
+  --primary-foreground: var(--lha-black);
+  --secondary: var(--lha-gray-dark);
+  --secondary-foreground: var(--lha-white);
+  --muted: var(--lha-gray-dark);
+  --muted-foreground: var(--lha-gray-medium);
+  --accent: var(--lha-yellow);
+  --accent-foreground: var(--lha-black);
+  --destructive: #dc3545;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: var(--lha-yellow);
+  --sidebar: var(--lha-gray-dark);
+  --sidebar-foreground: var(--lha-white);
+  --sidebar-primary: var(--lha-yellow);
+  --sidebar-primary-foreground: var(--lha-black);
+  --sidebar-accent: var(--lha-gray-dark);
+  --sidebar-accent-foreground: var(--lha-white);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: var(--lha-yellow);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* Custom London House Agent Styles */
+@layer components {
+  .lha-gradient {
+    background: linear-gradient(135deg, var(--lha-yellow) 0%, #FFD700 100%);
+  }
+  
+  .lha-card {
+    @apply bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02];
+  }
+  
+  .lha-button-primary {
+    @apply bg-[#FFCC00] text-black font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:bg-[#FFD700] hover:shadow-lg active:scale-95;
+  }
+  
+  .lha-button-secondary {
+    @apply bg-white text-black border-2 border-[#FFCC00] font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:bg-[#FFCC00] hover:shadow-lg active:scale-95;
+  }
+  
+  .lha-text-gradient {
+    background: linear-gradient(135deg, var(--lha-black) 0%, var(--lha-gray-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .lha-property-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+  
+  .lha-hero-section {
+    @apply bg-gradient-to-br from-[#FFCC00] via-[#FFD700] to-[#FFCC00] text-black;
+  }
+  
+  .lha-section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16;
+  }
+  
+  .lha-container {
+    @apply max-w-7xl mx-auto;
+  }
+  
+  .lha-image-overlay {
+    @apply absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 hover:opacity-100 flex items-center justify-center;
+  }
+  
+  .lha-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#FFCC00] text-black;
+  }
+  
+  .lha-input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFCC00] focus:border-transparent transition-all duration-200;
+  }
+  
+  .lha-textarea {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFCC00] focus:border-transparent transition-all duration-200 min-h-[120px];
+    resize: vertical;
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile-first responsive typography */
+.lha-heading-xl {
+  @apply text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight;
+}
+
+.lha-heading-lg {
+  @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight;
+}
+
+.lha-heading-md {
+  @apply text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight;
+}
+
+.lha-heading-sm {
+  @apply text-lg sm:text-xl lg:text-2xl font-semibold leading-tight;
+}
+
+.lha-body-lg {
+  @apply text-base sm:text-lg leading-relaxed;
+}
+
+.lha-body-md {
+  @apply text-sm sm:text-base leading-relaxed;
+}
+
+.lha-body-sm {
+  @apply text-xs sm:text-sm leading-relaxed;
+}

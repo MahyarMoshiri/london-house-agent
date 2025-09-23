@@ -1,0 +1,114 @@
+import { Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Menu, X, Home, Settings } from 'lucide-react'
+
+function Header({ isAdmin }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const location = useLocation()
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const isActivePath = (path) => {
+    return location.pathname === path
+  }
+
+  return (
+    <header className="bg-white shadow-lg border-b-4 border-[#FFCC00] sticky top-0 z-50">
+      <div className="lha-container lha-section-padding py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo and Brand */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="w-12 h-12 bg-[#FFCC00] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <Home className="w-6 h-6 text-black" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xl lg:text-2xl font-bold text-black">
+                London House Agent
+              </h1>
+              <p className="text-sm text-gray-600">Premium Property Portfolio</p>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className={`font-medium transition-colors duration-200 ${
+                isActivePath('/') 
+                  ? 'text-[#FFCC00] border-b-2 border-[#FFCC00] pb-1' 
+                  : 'text-gray-700 hover:text-[#FFCC00]'
+              }`}
+            >
+              Properties
+            </Link>
+            <Link
+              to="/admin"
+              className={`font-medium transition-colors duration-200 flex items-center space-x-1 ${
+                isActivePath('/admin') 
+                  ? 'text-[#FFCC00] border-b-2 border-[#FFCC00] pb-1' 
+                  : 'text-gray-700 hover:text-[#FFCC00]'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              <span>Admin</span>
+              {isAdmin && (
+                <span className="ml-1 w-2 h-2 bg-green-500 rounded-full"></span>
+              )}
+            </Link>
+          </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Toggle mobile menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6 text-gray-700" />
+            ) : (
+              <Menu className="w-6 h-6 text-gray-700" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <nav className="md:hidden mt-4 pt-4 border-t border-gray-200 animate-fade-in">
+            <div className="flex flex-col space-y-4">
+              <Link
+                to="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`font-medium py-2 px-4 rounded-lg transition-colors duration-200 ${
+                  isActivePath('/') 
+                    ? 'bg-[#FFCC00] text-black' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Properties
+              </Link>
+              <Link
+                to="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center space-x-2 ${
+                  isActivePath('/admin') 
+                    ? 'bg-[#FFCC00] text-black' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Admin Panel</span>
+                {isAdmin && (
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                )}
+              </Link>
+            </div>
+          </nav>
+        )}
+      </div>
+    </header>
+  )
+}
+
+export default Header
