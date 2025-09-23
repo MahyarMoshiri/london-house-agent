@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { isSupabaseConfigured, uploadPropertyImages } from '@/lib/supabaseStorage'
 
 function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin }) {
   const [password, setPassword] = useState('')
@@ -20,6 +21,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     features: []
   })
   const fileInputRef = useRef(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -87,25 +89,21 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     }
 
     try {
-      const toDataUrls = files.map(
-        (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result)
-            reader.onerror = () => reject(new Error('Failed to read file'))
-            reader.readAsDataURL(file)
-          })
-      )
+      if (!isSupabaseConfigured) {
+        throw new Error('Supabase storage is not configured yet. Please add the required environment variables first.')
+      }
 
-      const dataUrls = await Promise.all(toDataUrls)
+      setIsUploading(true)
+      const uploadedUrls = await uploadPropertyImages(files)
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...dataUrls]
+        images: [...prev.images, ...uploadedUrls]
       }))
     } catch (error) {
       console.error('Image upload failed:', error)
-      alert('We could not read one of the selected files. Please try again.')
+      alert(error.message || 'Image upload failed. Please try again.')
     } finally {
+      setIsUploading(false)
       if (input) {
         input.value = ''
       }
@@ -425,9 +423,10 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                       variant="outline"
                       size="sm"
                       className="flex items-center space-x-1"
+                      disabled={isUploading}
                     >
-                      <Upload className="w-4 h-4" />
-                      <span>Upload Images</span>
+                      <Upload className={`w-4 h-4 ${isUploading ? 'animate-spin' : ''}`} />
+                      <span>{isUploading ? 'Uploading…' : 'Upload Images'}</span>
                     </Button>
                     <input
                       type="file"
@@ -438,6 +437,11 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                       className="hidden"
                     />
                   </div>
+                  {!isSupabaseConfigured && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Add your Supabase credentials to enable direct uploads.
+                    </p>
+                  )}
                 </div>
                 
                 {formData.images.length > 0 ? (
