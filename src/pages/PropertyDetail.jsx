@@ -34,8 +34,8 @@ function PropertyDetail({ properties }) {
     if (foundProperty) {
       setProperty(foundProperty)
     } else {
-      // Property not found, redirect to home
-      navigate('/')
+      // Property not found, redirect to properties list
+      navigate('/properties')
     }
   }, [id, properties, navigate])
 
@@ -48,7 +48,7 @@ function PropertyDetail({ properties }) {
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Property Not Found</h2>
           <p className="text-gray-600 mb-6">The property you're looking for doesn't exist or has been removed.</p>
-          <Link to="/" className="lha-button-primary inline-flex items-center space-x-2">
+          <Link to="/properties" className="lha-button-primary inline-flex items-center space-x-2">
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Properties</span>
           </Link>
@@ -113,7 +113,7 @@ function PropertyDetail({ properties }) {
       <div className="bg-white border-b border-gray-200 sticky top-[73px] z-40">
         <div className="lha-container py-4">
           <Link 
-            to="/" 
+            to="/properties" 
             className="inline-flex items-center space-x-2 text-gray-600 hover:text-[#FFCC00] transition-colors duration-200"
           >
             <ArrowLeft className="w-4 h-4" />

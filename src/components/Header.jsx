@@ -11,6 +11,9 @@ function Header({ isAdmin }) {
   }
 
   const isActivePath = (path) => {
+    if (path === '/properties') {
+      return location.pathname === '/properties' || location.pathname.startsWith('/property/')
+    }
     return location.pathname === path
   }
 
@@ -19,7 +22,7 @@ function Header({ isAdmin }) {
       <div className="lha-container lha-section-padding py-4">
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
-          <Link to="/" className="flex items-center space-x-3 group">
+          <Link to="/properties" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 bg-[#FFCC00] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
               <Home className="w-6 h-6 text-black" />
             </div>
@@ -34,9 +37,9 @@ function Header({ isAdmin }) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              to="/"
+              to="/properties"
               className={`font-medium transition-colors duration-200 ${
-                isActivePath('/') 
+                isActivePath('/properties') 
                   ? 'text-[#FFCC00] border-b-2 border-[#FFCC00] pb-1' 
                   : 'text-gray-700 hover:text-[#FFCC00]'
               }`}
@@ -78,10 +81,10 @@ function Header({ isAdmin }) {
           <nav className="md:hidden mt-4 pt-4 border-t border-gray-200 animate-fade-in">
             <div className="flex flex-col space-y-4">
               <Link
-                to="/"
+                to="/properties"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`font-medium py-2 px-4 rounded-lg transition-colors duration-200 ${
-                  isActivePath('/') 
+                  isActivePath('/properties') 
                     ? 'bg-[#FFCC00] text-black' 
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}

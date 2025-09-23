@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import './App.css'
 
@@ -125,8 +125,12 @@ function App() {
         
         <main className="flex-1">
           <Routes>
+            <Route
+              path="/"
+              element={<Navigate to="/properties" replace />}
+            />
             <Route 
-              path="/" 
+              path="/properties" 
               element={<Home properties={properties} />} 
             />
             <Route 
