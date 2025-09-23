@@ -96,8 +96,8 @@ Best regards`)
               Premium Properties in London
             </h1>
             <p className="lha-body-lg mb-8 text-black/80 animate-slide-up">
-              Discover exceptional rental properties across London's most desirable neighborhoods. 
-              From luxury apartments to charming Victorian houses, find your perfect home with London House Agent.
+              Discover exceptional rental properties across London's most desirable neighbourhoods. 
+              We are working so you can find your perfect home with London House Agent.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-scale-in">
@@ -280,7 +280,7 @@ Best regards`)
             </h2>
             <p className="lha-body-lg text-gray-300 mb-8">
               Our experienced team is here to help you find the ideal property in London. 
-              Contact us today for personalized assistance and exclusive listings.
+              Contact us today for personalised assistance and exclusive listings.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
               <Button className="lha-button-primary flex items-center space-x-2">
