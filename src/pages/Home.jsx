@@ -318,7 +318,7 @@ Best regards`)
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
               <Button className="lha-button-primary flex items-center space-x-2">
                 <Phone className="w-5 h-5" />
-                <span>+44 20 7123 4567</span>
+                <span>+44 0203 509 8903</span>
               </Button>
               <Button variant="outline" className="border-[#FFCC00] text-[#FFCC00] hover:bg-[#FFCC00] hover:text-black flex items-center space-x-2">
                 <Mail className="w-5 h-5" />

@@ -89,7 +89,7 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={<Navigate to="/properties" replace />}
+              element={<Navigate to={`${import.meta.env.BASE_URL}properties`} replace />}
             />
             <Route 
               path="/properties" 

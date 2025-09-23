@@ -335,7 +335,7 @@ function PropertyDetail({ properties, isLoading }) {
                 <div className="space-y-4">
                   <Button className="w-full lha-button-primary flex items-center justify-center space-x-2">
                     <Phone className="w-5 h-5" />
-                    <span>Call +44 20 7123 4567</span>
+                <span>Call +44 0203 509 8903</span>
                   </Button>
                   
                   <Button 
@@ -348,7 +348,7 @@ function PropertyDetail({ properties, isLoading }) {
 
                   <div className="pt-4 border-t border-gray-200">
                     <p className="text-xs text-gray-500 text-center">
-                      Available Mon-Fri 9AM-6PM<br />
+                      Available Mon-Fri 10AM-6PM<br />
                       Saturday 10AM-4PM
                     </p>
                   </div>

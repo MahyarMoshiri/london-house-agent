@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import { Menu, X, Home, Settings } from 'lucide-react'
+import { Menu, X, Settings } from 'lucide-react'
 
 function Header({ isAdmin }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -24,7 +24,7 @@ function Header({ isAdmin }) {
           {/* Logo and Brand */}
           <Link to="/properties" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 bg-[#FFCC00] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <Home className="w-6 h-6 text-black" />
+              <img src="/your-logo.png" alt="London House Agent" className="w-6 h-6" />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl lg:text-2xl font-bold text-black">
