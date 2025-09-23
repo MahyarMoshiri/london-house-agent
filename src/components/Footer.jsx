@@ -14,7 +14,7 @@ function Footer() {
             </h3>
             <p className="text-gray-300 text-sm leading-relaxed">
               Your trusted partner in finding premium properties across London. 
-              We specialize in luxury rentals and sales with personalized service.
+              We specialise in rental solutions with personalised service.
             </p>
           </div>
 
@@ -24,7 +24,7 @@ function Footer() {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-[#FFCC00] flex-shrink-0" />
-                <span className="text-gray-300 text-sm">+44 20 7123 4567</span>
+                <span className="text-gray-300 text-sm">+44 0203 509 8903</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-[#FFCC00] flex-shrink-0" />
@@ -33,8 +33,8 @@ function Footer() {
               <div className="flex items-start space-x-3">
                 <MapPin className="w-4 h-4 text-[#FFCC00] flex-shrink-0 mt-0.5" />
                 <span className="text-gray-300 text-sm">
-                  123 Premium Street<br />
-                  London, SW1A 1AA
+                  87 Evelyn Avenue<br />
+                  London, NW9 0JF
                 </span>
               </div>
             </div>
@@ -47,7 +47,7 @@ function Footer() {
               <div className="flex items-center space-x-3">
                 <Clock className="w-4 h-4 text-[#FFCC00] flex-shrink-0" />
                 <div className="text-gray-300 text-sm">
-                  <div>Mon - Fri: 9:00 AM - 6:00 PM</div>
+                  <div>Mon - Fri: 10:00 AM - 6:00 PM</div>
                   <div>Saturday: 10:00 AM - 4:00 PM</div>
                   <div>Sunday: Closed</div>
                 </div>
@@ -59,8 +59,8 @@ function Footer() {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-[#FFCC00]">Our Services</h4>
             <ul className="space-y-2 text-gray-300 text-sm">
-              <li>• Property Sales</li>
-              <li>• Luxury Rentals</li>
+              <li>• Private Let</li>
+              <li>• Social Let</li>
               <li>• Property Management</li>
               <li>• Investment Advice</li>
               <li>• Market Valuations</li>
