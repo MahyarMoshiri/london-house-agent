@@ -80,8 +80,10 @@ function App() {
     }
   }, [])
 
+  const routerBase = import.meta.env.BASE_URL || '/'
+
   return (
-    <Router>
+    <Router basename={routerBase}>
       <div className="min-h-screen bg-background flex flex-col">
         <Header isAdmin={isAdmin} />
         
@@ -89,7 +91,7 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={<Navigate to={`${import.meta.env.BASE_URL}properties`} replace />}
+              element={<Navigate to="/properties" replace />}
             />
             <Route 
               path="/properties" 
