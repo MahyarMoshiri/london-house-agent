@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin }) {
@@ -19,6 +19,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     images: [],
     features: []
   })
+  const fileInputRef = useRef(null)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -71,6 +72,43 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
         ...prev,
         images: [...prev.images, url.trim()]
       }))
+    }
+  }
+
+  const handleImageUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleImageUpload = async (event) => {
+    const input = event.target
+    const files = Array.from(input?.files || [])
+    if (files.length === 0) {
+      return
+    }
+
+    try {
+      const toDataUrls = files.map(
+        (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result)
+            reader.onerror = () => reject(new Error('Failed to read file'))
+            reader.readAsDataURL(file)
+          })
+      )
+
+      const dataUrls = await Promise.all(toDataUrls)
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...dataUrls]
+      }))
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      alert('We could not read one of the selected files. Please try again.')
+    } finally {
+      if (input) {
+        input.value = ''
+      }
     }
   }
 
@@ -370,16 +408,36 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                   <label className="block text-sm font-medium text-gray-700">
                     Property Images
                   </label>
-                  <Button 
-                    type="button"
-                    onClick={handleImageUrlAdd}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-1"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Add Image URL</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button"
+                      onClick={handleImageUrlAdd}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <Link2 className="w-4 h-4" />
+                      <span>Add Image URL</span>
+                    </Button>
+                    <Button 
+                      type="button"
+                      onClick={handleImageUploadClick}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Upload Images</span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
                 
                 {formData.images.length > 0 ? (
