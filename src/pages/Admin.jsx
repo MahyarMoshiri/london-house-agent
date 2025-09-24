@@ -31,7 +31,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(false)
   const [albumError, setAlbumError] = useState('')
   const [albumActionError, setAlbumActionError] = useState('')
-  const [showAlbumDialog, setShowAlbumDialog] = useState(false)
+  const [showAlbumDialog, setShowAlbumDialog] = useState(false) // kept for backward-compat, not used in new inline UI
   const [editingAlbum, setEditingAlbum] = useState(null)
   const [albumForm, setAlbumForm] = useState({
     name: '',
@@ -40,6 +40,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   })
   const [isSavingAlbum, setIsSavingAlbum] = useState(false)
   const [deletingAlbumId, setDeletingAlbumId] = useState(null)
+  const [showCreateAlbumInline, setShowCreateAlbumInline] = useState(false)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -126,7 +127,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     resetAlbumForm()
     setEditingAlbum(null)
     setAlbumActionError('')
-    setShowAlbumDialog(true)
+    setShowCreateAlbumInline(true)
   }
 
   const openEditAlbumDialog = (album) => {
@@ -137,7 +138,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     })
     setEditingAlbum(album)
     setAlbumActionError('')
-    setShowAlbumDialog(true)
+    setShowCreateAlbumInline(false)
   }
 
   const handleAlbumInputChange = (e) => {
@@ -149,7 +150,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   }
 
   const closeAlbumDialog = () => {
-    setShowAlbumDialog(false)
+    setShowCreateAlbumInline(false)
     setEditingAlbum(null)
     resetAlbumForm()
   }
@@ -430,110 +431,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   // Admin Dashboard
   return (
     <div className="min-h-screen bg-gray-50">
-      {showAlbumDialog && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center px-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="lha-heading-md">
-                  {editingAlbum ? 'Edit Album' : 'Add Album'}
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Organize properties into curated collections.
-                </p>
-              </div>
-              <Button
-                type="button"
-                onClick={closeAlbumDialog}
-                variant="outline"
-                size="sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <form onSubmit={handleAlbumSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Album Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={albumForm.name}
-                  onChange={handleAlbumInputChange}
-                  className="lha-input"
-                  placeholder="e.g., Premium Studios"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Slug
-                </label>
-                <input
-                  type="text"
-                  name="slug"
-                  value={albumForm.slug}
-                  onChange={handleAlbumInputChange}
-                  className="lha-input"
-                  placeholder="e.g., premium-studios"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Used for internal references and URLs.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Display Order
-                </label>
-                <input
-                  type="number"
-                  name="displayOrder"
-                  value={albumForm.displayOrder}
-                  onChange={handleAlbumInputChange}
-                  className="lha-input"
-                />
-              </div>
-
-              {albumActionError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {albumActionError}
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  onClick={closeAlbumDialog}
-                  variant="outline"
-                  disabled={isSavingAlbum}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="lha-button-primary flex items-center space-x-2"
-                  disabled={isSavingAlbum}
-                >
-                  {isSavingAlbum ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>{editingAlbum ? 'Update Album' : 'Create Album'}</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Inline album editor (compact for mobile) */}
 
       <div className="lha-container lha-section-padding">
         {/* Header */}
@@ -919,6 +817,56 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
           )}
 
           <div className="p-6">
+            {showCreateAlbumInline && (
+              <div className="border border-gray-200 rounded-lg p-3 mb-6">
+                <form onSubmit={handleAlbumSubmit} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={albumForm.name}
+                      onChange={handleAlbumInputChange}
+                      className="lha-input py-2"
+                      placeholder="e.g., Premium Studios"
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Slug</label>
+                    <input
+                      type="text"
+                      name="slug"
+                      value={albumForm.slug}
+                      onChange={handleAlbumInputChange}
+                      className="lha-input py-2"
+                      placeholder="premium-studios"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Order</label>
+                    <input
+                      type="number"
+                      name="displayOrder"
+                      value={albumForm.displayOrder}
+                      onChange={handleAlbumInputChange}
+                      className="lha-input py-2"
+                    />
+                  </div>
+                  <div className="sm:col-span-5 flex justify-end gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={closeAlbumDialog} disabled={isSavingAlbum}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" size="sm" className="lha-button-primary flex items-center space-x-2" disabled={isSavingAlbum}>
+                      {isSavingAlbum ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      <span>{editingAlbum ? 'Update' : 'Create'}</span>
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {albumError ? (
               <div className="text-center text-sm text-red-600">
                 {albumError}
@@ -933,18 +881,20 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                 No albums created yet.
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {albums.map((album) => {
                   const propertyCount = albumPropertyCounts[album.id] || 0
 
                   return (
                     <div
                       key={album.id}
-                      className="border border-gray-200 rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                      className="border border-gray-200 rounded-lg p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                     >
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">{album.name}</h3>
-                        <div className="mt-2 text-sm text-gray-600 space-y-1">
+                      <div className="w-full">
+                        <div className="inline-block bg-[#FFCC00] text-black px-2 py-1 rounded">
+                          <span className="font-semibold text-sm">{album.name}</span>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1">
                           <p>
                             <span className="font-medium">Slug:</span> {album.slug}
                           </p>
@@ -955,17 +905,48 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                             <span className="font-medium">Properties:</span> {propertyCount}
                           </p>
                         </div>
+                        {editingAlbum?.id === album.id && (
+                          <div className="mt-3">
+                            <form onSubmit={handleAlbumSubmit} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" name="name" value={albumForm.name} onChange={handleAlbumInputChange} className="lha-input py-2" required />
+                              </div>
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Slug</label>
+                                <input type="text" name="slug" value={albumForm.slug} onChange={handleAlbumInputChange} className="lha-input py-2" required />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Order</label>
+                                <input type="number" name="displayOrder" value={albumForm.displayOrder} onChange={handleAlbumInputChange} className="lha-input py-2" />
+                              </div>
+                              <div className="sm:col-span-5 flex justify-end gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={closeAlbumDialog} disabled={isSavingAlbum}>Cancel</Button>
+                                <Button type="submit" size="sm" className="lha-button-primary flex items-center space-x-2" disabled={isSavingAlbum}>
+                                  {isSavingAlbum ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                  <span>Save</span>
+                                </Button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center space-x-3">
                         <Button
-                          onClick={() => openEditAlbumDialog(album)}
+                          onClick={() => {
+                            if (editingAlbum?.id === album.id) {
+                              closeAlbumDialog()
+                            } else {
+                              openEditAlbumDialog(album)
+                            }
+                          }}
                           variant="outline"
                           size="sm"
                           className="flex items-center space-x-1"
                           disabled={deletingAlbumId === album.id}
                         >
                           <Edit className="w-4 h-4" />
-                          <span>Edit</span>
+                          <span>{editingAlbum?.id === album.id ? 'Close' : 'Edit'}</span>
                         </Button>
                         <Button
                           onClick={() => handleDeleteAlbum(album)}

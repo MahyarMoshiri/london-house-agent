@@ -308,7 +308,9 @@ Best regards`)
                   {grouped.map(({ album, properties: props }) => (
                     props.length > 0 && (
                       <div key={album.id}>
-                        <h3 className="lha-heading-md mb-6">{album.name}</h3>
+                        <div className="inline-block bg-[#FFCC00] text-black px-3 py-2 rounded mb-6">
+                          <h3 className="font-semibold text-base">{album.name}</h3>
+                        </div>
                         <div className="lha-property-grid">
                           {props.map((property) => (
                             <PropertyCard key={property.id} property={property} />
@@ -319,7 +321,9 @@ Best regards`)
                   ))}
                   {ungrouped.length > 0 && (
                     <div>
-                      <h3 className="lha-heading-md mb-6">Other Properties</h3>
+                      <div className="inline-block bg-[#FFCC00] text-black px-3 py-2 rounded mb-6">
+                        <h3 className="font-semibold text-base">Other Properties</h3>
+                      </div>
                       <div className="lha-property-grid">
                         {ungrouped.map((property) => (
                           <PropertyCard key={property.id} property={property} />
