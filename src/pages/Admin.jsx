@@ -43,6 +43,8 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   const [showCreateAlbumInline, setShowCreateAlbumInline] = useState(false)
   const [togglingAlbumId, setTogglingAlbumId] = useState(null)
   const [togglingPropertyId, setTogglingPropertyId] = useState(null)
+  const [showHiddenAlbums, setShowHiddenAlbums] = useState(false)
+  const [showHiddenProperties, setShowHiddenProperties] = useState(false)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -818,6 +820,15 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              <label className="flex items-center gap-2 text-sm text-gray-600 mr-2">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={showHiddenAlbums}
+                  onChange={(e) => setShowHiddenAlbums(e.target.checked)}
+                />
+                <span>Show hidden</span>
+              </label>
               <Button
                 onClick={() => loadAlbums()}
                 variant="outline"
@@ -905,13 +916,13 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Loading albums...</span>
               </div>
-            ) : albums.length === 0 ? (
+            ) : (showHiddenAlbums ? albums : albums.filter(a => !a.isHidden)).length === 0 ? (
               <div className="text-center text-gray-500 text-sm">
                 No albums created yet.
               </div>
             ) : (
               <div className="space-y-3">
-                {albums.map((album) => {
+                {(showHiddenAlbums ? albums : albums.filter(a => !a.isHidden)).map((album) => {
                   const propertyCount = albumPropertyCounts[album.id] || 0
 
                   return (
@@ -1026,8 +1037,17 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
 
         {/* Properties List */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between gap-3">
             <h2 className="lha-heading-md">Property Management</h2>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={showHiddenProperties}
+                onChange={(e) => setShowHiddenProperties(e.target.checked)}
+              />
+              <span>Show hidden</span>
+            </label>
           </div>
           
           {error ? (
@@ -1064,7 +1084,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {properties.map((property) => (
+              {(showHiddenProperties ? properties : properties.filter(p => !p.isHidden)).map((property) => (
                 <div key={property.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
                     <div className="flex-1">
