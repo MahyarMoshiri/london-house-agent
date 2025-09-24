@@ -302,12 +302,12 @@ Best regards`)
               </div>
             </div>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-16">
               {Array.isArray(albums) && albums.length > 0 ? (
                 <>
                   {grouped.map(({ album, properties: props }) => (
                     props.length > 0 && (
-                      <div key={album.id}>
+                      <div key={album.id} className="border border-gray-200 rounded-lg p-4 sm:p-6">
                         <div className="inline-block bg-[#FFCC00] text-black px-3 py-2 rounded mb-6">
                           <h3 className="font-semibold text-base">{album.name}</h3>
                         </div>
@@ -320,7 +320,7 @@ Best regards`)
                     )
                   ))}
                   {ungrouped.length > 0 && (
-                    <div>
+                    <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
                       <div className="inline-block bg-[#FFCC00] text-black px-3 py-2 rounded mb-6">
                         <h3 className="font-semibold text-base">Other Properties</h3>
                       </div>
