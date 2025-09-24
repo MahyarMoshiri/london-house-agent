@@ -41,10 +41,10 @@ function Home({ properties, albums = [], isLoading, error, onRetry }) {
   }, [propertiesList, searchTerm, priceFilter, bedroomFilter])
 
   // Group filtered properties by album
-  const grouped = useMemo(() => {
-    return albumsWithProperties(albums, filteredProperties)
-  }, [albums, filteredProperties])
-  const ungrouped = useMemo(() => getUngroupedProperties(filteredProperties), [filteredProperties])
+  const visibleProperties = useMemo(() => filteredProperties.filter(p => !p.isHidden), [filteredProperties])
+  const visibleAlbums = useMemo(() => (Array.isArray(albums) ? albums.filter(a => !a.isHidden) : []), [albums])
+  const grouped = useMemo(() => albumsWithProperties(visibleAlbums, visibleProperties), [visibleAlbums, visibleProperties])
+  const ungrouped = useMemo(() => getUngroupedProperties(visibleProperties), [visibleProperties])
 
   const clearFilters = () => {
     setSearchTerm('')

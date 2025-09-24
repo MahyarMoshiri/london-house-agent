@@ -15,6 +15,7 @@ export const normalizeAlbum = (record) => {
       : Number(record.display_order) || 0,
     createdAt: record.created_at ?? record.createdAt ?? null,
     updatedAt: record.updated_at ?? record.updatedAt ?? null,
+    isHidden: Boolean(record.is_hidden) || false,
   }
 }
 
@@ -41,6 +42,7 @@ const normalizeProperty = (record) => {
     updatedAt: record.updated_at ?? record.updatedAt ?? null,
     albumId: record.album_id ?? normalizedAlbum?.id ?? null,
     album: normalizedAlbum,
+    isHidden: Boolean(record.is_hidden) || false,
   }
 }
 
@@ -55,6 +57,7 @@ const mapToDatabase = (property) => ({
   images: property.images ?? [],
   features: property.features ?? [],
   album_id: property.albumId ?? property.album?.id ?? null,
+  is_hidden: typeof property.isHidden === 'boolean' ? property.isHidden : undefined,
 })
 
 export async function fetchProperties() {
@@ -110,6 +113,7 @@ const mapAlbumToDatabase = (album) => ({
   display_order: typeof album.displayOrder === 'number'
     ? album.displayOrder
     : Number(album.displayOrder) || 0,
+  is_hidden: typeof album.isHidden === 'boolean' ? album.isHidden : undefined,
 })
 
 export async function createAlbum(album) {

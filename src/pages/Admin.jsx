@@ -41,6 +41,8 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   const [isSavingAlbum, setIsSavingAlbum] = useState(false)
   const [deletingAlbumId, setDeletingAlbumId] = useState(null)
   const [showCreateAlbumInline, setShowCreateAlbumInline] = useState(false)
+  const [togglingAlbumId, setTogglingAlbumId] = useState(null)
+  const [togglingPropertyId, setTogglingPropertyId] = useState(null)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -360,6 +362,33 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       setActionError(error.message || 'Failed to delete property. Please try again.')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleToggleAlbumVisibility = async (album) => {
+    setAlbumActionError('')
+    setTogglingAlbumId(album.id)
+    try {
+      await updateAlbum(album.id, { isHidden: !album.isHidden })
+      await loadAlbums()
+    } catch (error) {
+      console.error('Failed to toggle album visibility:', error)
+      setAlbumActionError(error.message || 'Failed to toggle album visibility.')
+    } finally {
+      setTogglingAlbumId(null)
+    }
+  }
+
+  const handleTogglePropertyVisibility = async (property) => {
+    setActionError('')
+    setTogglingPropertyId(property.id)
+    try {
+      await updateProperty(property.id, { ...property, isHidden: !property.isHidden })
+    } catch (error) {
+      console.error('Failed to toggle property visibility:', error)
+      setActionError(error.message || 'Failed to toggle property visibility.')
+    } finally {
+      setTogglingPropertyId(null)
     }
   }
 
@@ -891,8 +920,11 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                       className="border border-gray-200 rounded-lg p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
                     >
                       <div className="w-full">
-                        <div className="inline-block bg-[#FFCC00] text-black px-2 py-1 rounded">
-                          <span className="font-semibold text-sm">{album.name}</span>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="inline-block bg-[#FFCC00] text-black px-2 py-1 rounded font-semibold text-sm">{album.name}</span>
+                          {album.isHidden && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">Hidden</span>
+                          )}
                         </div>
                         <div className="mt-2 text-xs text-gray-600 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1">
                           <p>
@@ -947,6 +979,22 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                         >
                           <Edit className="w-4 h-4" />
                           <span>{editingAlbum?.id === album.id ? 'Close' : 'Edit'}</span>
+                        </Button>
+                        <Button
+                          onClick={() => handleToggleAlbumVisibility(album)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          disabled={togglingAlbumId === album.id}
+                        >
+                          {togglingAlbumId === album.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : album.isHidden ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                          <span>{album.isHidden ? 'Unhide' : 'Hide'}</span>
                         </Button>
                         <Button
                           onClick={() => handleDeleteAlbum(album)}
@@ -1020,8 +1068,11 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                 <div key={property.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                      <h3 className="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
                         {property.title || 'Untitled Property'}
+                        {property.isHidden && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">Hidden</span>
+                        )}
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                         <div>
@@ -1059,6 +1110,22 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                       >
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
+                      </Button>
+                      <Button
+                        onClick={() => handleTogglePropertyVisibility(property)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center space-x-1"
+                        disabled={togglingPropertyId === property.id}
+                      >
+                        {togglingPropertyId === property.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : property.isHidden ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <EyeOff className="w-4 h-4" />
+                        )}
+                        <span>{property.isHidden ? 'Unhide' : 'Hide'}</span>
                       </Button>
                       <Button
                         onClick={() => handleDelete(property.id)}
