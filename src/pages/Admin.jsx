@@ -263,10 +263,6 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                 Login to Admin Panel
               </Button>
             </form>
-
-            <div className="mt-6 text-center text-sm text-gray-500">
-              Demo password: <code className="bg-gray-100 px-2 py-1 rounded">admin123</code>
-            </div>
           </div>
         </div>
       </div>
