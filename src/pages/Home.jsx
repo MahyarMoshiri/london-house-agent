@@ -105,7 +105,7 @@ Best regards`)
         <div className="lha-container">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="lha-heading-xl mb-6 animate-fade-in">
-              1 Bed+ Properties
+              Properties Album
             </h1>
             <p className="lha-body-lg mb-8 text-black/80 animate-slide-up">
               Discover exceptional rental properties across London's most desirable neighbourhoods. 
