@@ -46,19 +46,25 @@ const normalizeProperty = (record) => {
   }
 }
 
-const mapToDatabase = (property) => ({
-  title: property.title ?? '',
-  description: property.description ?? '',
-  price: property.price ?? 0,
-  address: property.address ?? '',
-  bedrooms: property.bedrooms ?? 0,
-  bathrooms: property.bathrooms ?? 0,
-  availability: property.availability ?? '',
-  images: property.images ?? [],
-  features: property.features ?? [],
-  album_id: property.albumId ?? property.album?.id ?? null,
-  is_hidden: typeof property.isHidden === 'boolean' ? property.isHidden : undefined,
-})
+const mapToDatabase = (property) => {
+  const payload = {}
+
+  if ('title' in property) payload.title = property.title ?? ''
+  if ('description' in property) payload.description = property.description ?? ''
+  if ('price' in property) payload.price = typeof property.price === 'number' ? property.price : Number(property.price) || 0
+  if ('address' in property) payload.address = property.address ?? ''
+  if ('bedrooms' in property) payload.bedrooms = typeof property.bedrooms === 'number' ? property.bedrooms : Number(property.bedrooms) || 0
+  if ('bathrooms' in property) payload.bathrooms = typeof property.bathrooms === 'number' ? property.bathrooms : Number(property.bathrooms) || 0
+  if ('availability' in property) payload.availability = property.availability ?? ''
+  if ('images' in property) payload.images = property.images ?? []
+  if ('features' in property) payload.features = property.features ?? []
+  if ('albumId' in property || ('album' in property && property.album)) {
+    payload.album_id = property.albumId ?? property.album?.id ?? null
+  }
+  if ('isHidden' in property) payload.is_hidden = property.isHidden ?? false
+
+  return payload
+}
 
 export async function fetchProperties() {
   if (!isSupabaseDataConfigured) {
@@ -107,14 +113,19 @@ export async function fetchAlbums() {
   return (data ?? []).map(normalizeAlbum)
 }
 
-const mapAlbumToDatabase = (album) => ({
-  name: album.name ?? '',
-  slug: album.slug ?? '',
-  display_order: typeof album.displayOrder === 'number'
-    ? album.displayOrder
-    : Number(album.displayOrder) || 0,
-  is_hidden: typeof album.isHidden === 'boolean' ? album.isHidden : undefined,
-})
+const mapAlbumToDatabase = (album) => {
+  const payload = {}
+
+  if ('name' in album) payload.name = album.name ?? ''
+  if ('slug' in album) payload.slug = album.slug ?? ''
+  if ('displayOrder' in album) {
+    const order = album.displayOrder
+    payload.display_order = typeof order === 'number' ? order : Number(order) || 0
+  }
+  if ('isHidden' in album) payload.is_hidden = album.isHidden ?? false
+
+  return payload
+}
 
 export async function createAlbum(album) {
   const supabase = ensureSupabaseClient()

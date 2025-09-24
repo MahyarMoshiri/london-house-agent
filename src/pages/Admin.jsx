@@ -385,7 +385,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     setActionError('')
     setTogglingPropertyId(property.id)
     try {
-      await updateProperty(property.id, { ...property, isHidden: !property.isHidden })
+      await updateProperty(property.id, { isHidden: !property.isHidden })
     } catch (error) {
       console.error('Failed to toggle property visibility:', error)
       setActionError(error.message || 'Failed to toggle property visibility.')
