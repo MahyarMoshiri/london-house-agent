@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Filter, MapPin, Bed, Bath, Calendar, Phone, Mail, ArrowRight, Star, Share2, X, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { albumsWithProperties, getUngroupedProperties } from '@/lib/supabaseProperties'
 
-function Home({ properties, isLoading, error, onRetry }) {
+function Home({ properties, albums = [], isLoading, error, onRetry }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [priceFilter, setPriceFilter] = useState('')
   const [bedroomFilter, setBedroomFilter] = useState('')
@@ -38,6 +39,12 @@ function Home({ properties, isLoading, error, onRetry }) {
       return matchesSearch && matchesPrice && matchesBedrooms
     })
   }, [propertiesList, searchTerm, priceFilter, bedroomFilter])
+
+  // Group filtered properties by album
+  const grouped = useMemo(() => {
+    return albumsWithProperties(albums, filteredProperties)
+  }, [albums, filteredProperties])
+  const ungrouped = useMemo(() => getUngroupedProperties(filteredProperties), [filteredProperties])
 
   const clearFilters = () => {
     setSearchTerm('')
@@ -295,10 +302,39 @@ Best regards`)
               </div>
             </div>
           ) : (
-            <div className="lha-property-grid">
-              {filteredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
+            <div className="space-y-12">
+              {Array.isArray(albums) && albums.length > 0 ? (
+                <>
+                  {grouped.map(({ album, properties: props }) => (
+                    props.length > 0 && (
+                      <div key={album.id}>
+                        <h3 className="lha-heading-md mb-6">{album.name}</h3>
+                        <div className="lha-property-grid">
+                          {props.map((property) => (
+                            <PropertyCard key={property.id} property={property} />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                  {ungrouped.length > 0 && (
+                    <div>
+                      <h3 className="lha-heading-md mb-6">Other Properties</h3>
+                      <div className="lha-property-grid">
+                        {ungrouped.map((property) => (
+                          <PropertyCard key={property.id} property={property} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="lha-property-grid">
+                  {filteredProperties.map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -10,6 +10,7 @@ import PropertyDetail from './pages/PropertyDetail'
 import Admin from './pages/Admin'
 import { 
   fetchProperties,
+  fetchAlbums,
   createProperty,
   updatePropertyRecord,
   removeProperty,
@@ -20,6 +21,7 @@ function App() {
   const [properties, setProperties] = useState([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(true)
   const [propertiesError, setPropertiesError] = useState('')
+  const [albums, setAlbums] = useState([])
   const [isAdmin, setIsAdmin] = useState(false)
 
   const loadProperties = useCallback(async () => {
@@ -34,8 +36,12 @@ function App() {
     }
 
     try {
-      const data = await fetchProperties()
-      setProperties(data)
+      const [propsData, albumsData] = await Promise.all([
+        fetchProperties(),
+        fetchAlbums(),
+      ])
+      setProperties(propsData)
+      setAlbums(albumsData)
     } catch (error) {
       console.error('Failed to fetch properties:', error)
       setPropertiesError(error.message || 'Failed to fetch properties.')
@@ -98,6 +104,7 @@ function App() {
               element={
                 <Home 
                   properties={properties}
+                  albums={albums}
                   isLoading={isLoadingProperties}
                   error={propertiesError}
                   onRetry={loadProperties}

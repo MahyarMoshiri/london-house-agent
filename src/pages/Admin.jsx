@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, Link2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { isSupabaseConfigured, uploadPropertyImages } from '@/lib/supabaseStorage'
+import { fetchAlbums, createAlbum, updateAlbum, removeAlbum } from '@/lib/supabaseProperties'
 
 function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin, isLoading, error, onReload }) {
   const [password, setPassword] = useState('')
@@ -18,13 +19,27 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     bathrooms: '',
     availability: '',
     images: [],
-    features: []
+    features: [],
+    albumId: ''
   })
   const fileInputRef = useRef(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [actionError, setActionError] = useState('')
+  const [albums, setAlbums] = useState([])
+  const [isLoadingAlbums, setIsLoadingAlbums] = useState(false)
+  const [albumError, setAlbumError] = useState('')
+  const [albumActionError, setAlbumActionError] = useState('')
+  const [showAlbumDialog, setShowAlbumDialog] = useState(false)
+  const [editingAlbum, setEditingAlbum] = useState(null)
+  const [albumForm, setAlbumForm] = useState({
+    name: '',
+    slug: '',
+    displayOrder: '0'
+  })
+  const [isSavingAlbum, setIsSavingAlbum] = useState(false)
+  const [deletingAlbumId, setDeletingAlbumId] = useState(null)
 
   // Simple password authentication (in production, use proper authentication)
   const ADMIN_PASSWORD = 'admin123'
@@ -59,8 +74,144 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       bathrooms: '',
       availability: '',
       images: [],
-      features: []
+      features: [],
+      albumId: ''
     })
+  }
+
+  const resetAlbumForm = () => {
+    setAlbumForm({
+      name: '',
+      slug: '',
+      displayOrder: '0'
+    })
+  }
+
+  const loadAlbums = useCallback(async () => {
+    setIsLoadingAlbums(true)
+    setAlbumError('')
+
+    try {
+      const data = await fetchAlbums()
+      setAlbums(data)
+    } catch (error) {
+      console.error('Failed to load albums:', error)
+      setAlbumError(error.message || 'Failed to load albums.')
+    } finally {
+      setIsLoadingAlbums(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAdmin) {
+      return
+    }
+
+    loadAlbums()
+  }, [isAdmin, loadAlbums])
+
+  const albumPropertyCounts = useMemo(() => {
+    return (properties || []).reduce((acc, property) => {
+      const albumId = property?.album?.id || property?.albumId
+      if (!albumId) {
+        return acc
+      }
+
+      acc[albumId] = (acc[albumId] || 0) + 1
+      return acc
+    }, {})
+  }, [properties])
+
+  const openCreateAlbumDialog = () => {
+    resetAlbumForm()
+    setEditingAlbum(null)
+    setAlbumActionError('')
+    setShowAlbumDialog(true)
+  }
+
+  const openEditAlbumDialog = (album) => {
+    setAlbumForm({
+      name: album.name || '',
+      slug: album.slug || '',
+      displayOrder: (album.displayOrder ?? 0).toString()
+    })
+    setEditingAlbum(album)
+    setAlbumActionError('')
+    setShowAlbumDialog(true)
+  }
+
+  const handleAlbumInputChange = (e) => {
+    const { name, value } = e.target
+    setAlbumForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const closeAlbumDialog = () => {
+    setShowAlbumDialog(false)
+    setEditingAlbum(null)
+    resetAlbumForm()
+  }
+
+  const handleAlbumSubmit = async (e) => {
+    e.preventDefault()
+
+    const payload = {
+      name: albumForm.name.trim(),
+      slug: albumForm.slug.trim(),
+      displayOrder: Number(albumForm.displayOrder) || 0
+    }
+
+    setAlbumActionError('')
+    setIsSavingAlbum(true)
+
+    try {
+      if (editingAlbum) {
+        await updateAlbum(editingAlbum.id, payload)
+      } else {
+        await createAlbum(payload)
+      }
+
+      await loadAlbums()
+      if (typeof onReload === 'function') {
+        onReload()
+      }
+
+      closeAlbumDialog()
+    } catch (error) {
+      console.error('Failed to save album:', error)
+      setAlbumActionError(error.message || 'Failed to save album. Please try again.')
+    } finally {
+      setIsSavingAlbum(false)
+    }
+  }
+
+  const handleDeleteAlbum = async (album) => {
+    const propertyCount = albumPropertyCounts[album.id] || 0
+    const confirmationMessage = propertyCount > 0
+      ? `This album currently has ${propertyCount} ${propertyCount === 1 ? 'property' : 'properties'}. Deleting it will remove the album assignment from those properties. Continue?`
+      : 'Are you sure you want to delete this album?'
+
+    if (!window.confirm(confirmationMessage)) {
+      return
+    }
+
+    setAlbumActionError('')
+    setDeletingAlbumId(album.id)
+
+    try {
+      await removeAlbum(album.id)
+      await loadAlbums()
+      if (typeof onReload === 'function') {
+        onReload()
+      }
+    } catch (error) {
+      console.error('Failed to delete album:', error)
+      setAlbumActionError(error.message || 'Failed to delete album. Please try again.')
+    } finally {
+      setDeletingAlbumId(null)
+    }
   }
 
   const handleInputChange = (e) => {
@@ -142,11 +293,17 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    if (formData.albumId && !albums.some(album => album.id === formData.albumId)) {
+      setActionError('Selected album is no longer available. Please refresh albums and try again.')
+      return
+    }
+
     const propertyData = {
       ...formData,
       price: parseFloat(formData.price) || 0,
       bedrooms: parseInt(formData.bedrooms) || 0,
-      bathrooms: parseInt(formData.bathrooms) || 0
+      bathrooms: parseInt(formData.bathrooms) || 0,
+      albumId: formData.albumId || null
     }
 
     setActionError('')
@@ -180,7 +337,8 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       bathrooms: property.bathrooms?.toString() || '',
       availability: property.availability || '',
       images: property.images || [],
-      features: property.features || []
+      features: property.features || [],
+      albumId: property.album?.id || property.albumId || ''
     })
     setEditingProperty(property)
     setShowAddForm(false)
@@ -272,6 +430,111 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
   // Admin Dashboard
   return (
     <div className="min-h-screen bg-gray-50">
+      {showAlbumDialog && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="lha-heading-md">
+                  {editingAlbum ? 'Edit Album' : 'Add Album'}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Organize properties into curated collections.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={closeAlbumDialog}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <form onSubmit={handleAlbumSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Album Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={albumForm.name}
+                  onChange={handleAlbumInputChange}
+                  className="lha-input"
+                  placeholder="e.g., Premium Studios"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Slug
+                </label>
+                <input
+                  type="text"
+                  name="slug"
+                  value={albumForm.slug}
+                  onChange={handleAlbumInputChange}
+                  className="lha-input"
+                  placeholder="e.g., premium-studios"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Used for internal references and URLs.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  name="displayOrder"
+                  value={albumForm.displayOrder}
+                  onChange={handleAlbumInputChange}
+                  className="lha-input"
+                />
+              </div>
+
+              {albumActionError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {albumActionError}
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  type="button"
+                  onClick={closeAlbumDialog}
+                  variant="outline"
+                  disabled={isSavingAlbum}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="lha-button-primary flex items-center space-x-2"
+                  disabled={isSavingAlbum}
+                >
+                  {isSavingAlbum ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{editingAlbum ? 'Update Album' : 'Create Album'}</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="lha-container lha-section-padding">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -397,6 +660,32 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                     className="lha-input"
                     placeholder="e.g., Available Now"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Album
+                  </label>
+                  <select
+                    name="albumId"
+                    value={formData.albumId}
+                    onChange={handleInputChange}
+                    className="lha-input"
+                    disabled={isLoadingAlbums || Boolean(albumError)}
+                  >
+                    <option value="">No album</option>
+                    {albums.map((album) => (
+                      <option key={album.id} value={album.id}>
+                        {album.name}
+                      </option>
+                    ))}
+                  </select>
+                  {albumError && (
+                    <p className="text-xs text-red-600 mt-1">{albumError}</p>
+                  )}
+                  {!albumError && !isLoadingAlbums && albums.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">Create an album to group properties.</p>
+                  )}
                 </div>
 
                 <div>
@@ -592,6 +881,120 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
           </div>
         )}
 
+        {/* Album Management */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="lha-heading-md">Album Management</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Group properties into curated collections for faster browsing.
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => loadAlbums()}
+                variant="outline"
+                size="sm"
+                disabled={isLoadingAlbums}
+                className="flex items-center space-x-1"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingAlbums ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </Button>
+              <Button
+                onClick={openCreateAlbumDialog}
+                className="lha-button-primary flex items-center space-x-2"
+                size="sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Album</span>
+              </Button>
+            </div>
+          </div>
+
+          {albumActionError && !showAlbumDialog && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+              {albumActionError}
+            </div>
+          )}
+
+          <div className="p-6">
+            {albumError ? (
+              <div className="text-center text-sm text-red-600">
+                {albumError}
+              </div>
+            ) : isLoadingAlbums ? (
+              <div className="text-center text-gray-600 text-sm flex items-center justify-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading albums...</span>
+              </div>
+            ) : albums.length === 0 ? (
+              <div className="text-center text-gray-500 text-sm">
+                No albums created yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {albums.map((album) => {
+                  const propertyCount = albumPropertyCounts[album.id] || 0
+
+                  return (
+                    <div
+                      key={album.id}
+                      className="border border-gray-200 rounded-lg p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    >
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-lg">{album.name}</h3>
+                        <div className="mt-2 text-sm text-gray-600 space-y-1">
+                          <p>
+                            <span className="font-medium">Slug:</span> {album.slug}
+                          </p>
+                          <p>
+                            <span className="font-medium">Display Order:</span> {album.displayOrder ?? 0}
+                          </p>
+                          <p>
+                            <span className="font-medium">Properties:</span> {propertyCount}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Button
+                          onClick={() => openEditAlbumDialog(album)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          disabled={deletingAlbumId === album.id}
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span>Edit</span>
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteAlbum(album)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-600 hover:bg-red-50 flex items-center space-x-1"
+                          disabled={deletingAlbumId === album.id}
+                        >
+                          {deletingAlbumId === album.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              <span>Delete</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Properties List */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200">
@@ -653,11 +1056,16 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                           <span className="font-medium">Status:</span> {property.availability || 'Not specified'}
                         </div>
                       </div>
-                      {property.address && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          <span className="font-medium">Address:</span> {property.address}
+                      <div className="text-sm text-gray-600 mt-2 space-y-1">
+                        {property.address && (
+                          <p>
+                            <span className="font-medium">Address:</span> {property.address}
+                          </p>
+                        )}
+                        <p>
+                          <span className="font-medium">Album:</span> {property.album?.name || 'Unassigned'}
                         </p>
-                      )}
+                      </div>
                     </div>
                     
                     <div className="flex items-center space-x-3">
