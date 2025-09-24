@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        var segments = window.location.pathname.split('/').filter(Boolean);
+        var baseSegments = segments.length ? [segments[0]] : [];
+        var basePath = '/' + baseSegments.join('/') + (baseSegments.length ? '/' : '');
+        var fullPath = window.location.pathname + window.location.search + window.location.hash;
+
+        if (fullPath !== basePath) {
+          sessionStorage.setItem('redirectPath', fullPath);
+          sessionStorage.setItem('basePath', basePath || '/');
+          window.location.replace(basePath || '/');
+        }
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

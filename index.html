@@ -5,6 +5,33 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>London House Agent - Property Portfolio</title>
+    <script>
+      (function () {
+        var redirectPath = sessionStorage.getItem('redirectPath');
+        if (!redirectPath) {
+          return;
+        }
+
+        var basePath = sessionStorage.getItem('basePath') || window.location.pathname;
+        sessionStorage.removeItem('redirectPath');
+        sessionStorage.removeItem('basePath');
+
+        if (redirectPath[0] !== '/') {
+          redirectPath = '/' + redirectPath;
+        }
+
+        if (basePath && redirectPath.indexOf(basePath) !== 0) {
+          redirectPath = basePath.replace(/\/*$/, '/') + redirectPath.replace(/^\/+/, '');
+        }
+
+        var current = window.location.pathname + window.location.search + window.location.hash;
+        if (current === redirectPath) {
+          return;
+        }
+
+        history.replaceState(null, null, redirectPath);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

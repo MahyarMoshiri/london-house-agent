@@ -101,27 +101,26 @@ Best regards`)
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="lha-hero-section lha-section-padding">
+      <section className="lha-hero-section px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="lha-container">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="lha-heading-xl mb-6 animate-fade-in">
+            <h1 className="lha-heading-lg sm:lha-heading-xl mb-3 animate-fade-in">
               Properties Album
             </h1>
-            <p className="lha-body-lg mb-8 text-black/80 animate-slide-up">
-              Discover exceptional rental properties across London's most desirable neighbourhoods. 
-              We are working so you can find your perfect home with London House Agent.
+            <p className="lha-body-md sm:lha-body-lg mb-4 text-black/80 animate-slide-up">
+              Curated rentals across London’s best neighbourhoods—find your next place in minutes.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-scale-in">
-              <div className="flex items-center space-x-2 text-black">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm animate-scale-in">
+              <div className="flex items-center gap-2 text-black">
                 <Star className="w-5 h-5 fill-current" />
                 <span className="font-semibold">Premium Service</span>
               </div>
-              <div className="flex items-center space-x-2 text-black">
+              <div className="flex items-center gap-2 text-black">
                 <MapPin className="w-5 h-5" />
                 <span className="font-semibold">Prime Locations</span>
               </div>
-              <div className="flex items-center space-x-2 text-black">
+              <div className="flex items-center gap-2 text-black">
                 <Phone className="w-5 h-5" />
                 <span className="font-semibold">24/7 Support</span>
               </div>
@@ -132,7 +131,7 @@ Best regards`)
 
       {/* Search and Filters */}
       <section className="bg-white border-b border-gray-200 sticky top-[73px] z-40">
-        <div className="lha-container py-6">
+        <div className="lha-container py-3">
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative max-w-2xl mx-auto">
@@ -142,7 +141,7 @@ Best regards`)
                 placeholder="Search by location, property type, or features..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFCC00] focus:border-transparent text-lg"
+                className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFCC00] focus:border-transparent text-base"
               />
             </div>
 
