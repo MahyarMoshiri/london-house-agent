@@ -5,16 +5,46 @@
     <title>Redirecting…</title>
     <script>
       (function () {
-        var segments = window.location.pathname.split('/').filter(Boolean);
-        var baseSegments = segments.length ? [segments[0]] : [];
-        var basePath = '/' + baseSegments.join('/') + (baseSegments.length ? '/' : '');
-        var fullPath = window.location.pathname + window.location.search + window.location.hash;
+        var l = window.location;
+        var segments = l.pathname.split('/').filter(Boolean);
 
-        if (fullPath !== basePath) {
-          sessionStorage.setItem('redirectPath', fullPath);
-          sessionStorage.setItem('basePath', basePath || '/');
-          window.location.replace(basePath || '/');
+        if (!segments.length) {
+          return;
         }
+
+        var segmentCount = 1; // keep the repo name (/london-house-agent)
+        var origin = l.protocol + '//' + l.host;
+        var preserved = segments.slice(0, segmentCount);
+        var preservedPath = preserved.length ? '/' + preserved.join('/') : '';
+        var redirectSegments = segments.slice(segmentCount);
+
+        var search = l.search ? l.search.slice(1) : '';
+        var hash = l.hash ? l.hash.slice(1) : '';
+
+        var params = new URLSearchParams();
+
+        if (redirectSegments.length) {
+          params.set('__redirect', '/' + redirectSegments.join('/'));
+        }
+
+        if (search) {
+          params.set('__search', search);
+        }
+
+        if (hash) {
+          params.set('__hash', hash);
+        }
+
+        if (![...params.keys()].length) {
+          return;
+        }
+
+        var target = origin + preservedPath + '/';
+        if (params.toString()) {
+          target += '?' + params.toString();
+        }
+
+        window.location.replace(target);
       })();
     </script>
   </head>
