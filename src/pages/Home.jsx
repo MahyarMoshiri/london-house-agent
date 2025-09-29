@@ -259,7 +259,7 @@ Best regards`)
             </div>
             
             {!isLoading && !error && filteredProperties.length > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="hidden sm:flex sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <Button 
                   onClick={handleSharePortfolio}
                   className="lha-button-secondary flex items-center space-x-2 w-full sm:w-auto"
