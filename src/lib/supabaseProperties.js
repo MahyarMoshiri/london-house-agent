@@ -1,4 +1,5 @@
 import { ensureSupabaseClient, isSupabaseConfigured } from './supabaseClient'
+import { canonicalizeLocationValue } from '@/constants/locations'
 
 const SUPABASE_PROPERTIES_TABLE = import.meta.env.VITE_SUPABASE_PROPERTIES_TABLE || 'properties'
 const SUPABASE_ALBUMS_TABLE = 'albums'
@@ -36,6 +37,7 @@ const normalizeProperty = (record) => {
     bedrooms: typeof record.bedrooms === 'number' ? record.bedrooms : Number(record.bedrooms) || 0,
     bathrooms: typeof record.bathrooms === 'number' ? record.bathrooms : Number(record.bathrooms) || 0,
     availability: record.availability ?? '',
+    location: canonicalizeLocationValue(record.location) || '',
     images: Array.isArray(record.images) ? record.images : [],
     features: Array.isArray(record.features) ? record.features : [],
     createdAt: record.created_at ?? record.createdAt ?? null,
@@ -56,6 +58,10 @@ const mapToDatabase = (property) => {
   if ('bedrooms' in property) payload.bedrooms = typeof property.bedrooms === 'number' ? property.bedrooms : Number(property.bedrooms) || 0
   if ('bathrooms' in property) payload.bathrooms = typeof property.bathrooms === 'number' ? property.bathrooms : Number(property.bathrooms) || 0
   if ('availability' in property) payload.availability = property.availability ?? ''
+  if ('location' in property) {
+    const locationValue = canonicalizeLocationValue(property.location)
+    payload.location = locationValue || null
+  }
   if ('images' in property) payload.images = property.images ?? []
   if ('features' in property) payload.features = property.features ?? []
   if ('albumId' in property || ('album' in property && property.album)) {

@@ -2,23 +2,20 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { 
   ArrowLeft, 
-  MapPin, 
-  Bed, 
-  Bath, 
-  Calendar, 
   Phone, 
   Mail, 
+  MapPin,
   Share2, 
   Heart,
   ChevronLeft,
   ChevronRight,
   X,
-  Check,
   Star,
   Home as HomeIcon,
   Loader2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getLocationDisplayName } from '@/constants/locations'
 
 function PropertyDetail({ properties, isLoading }) {
   const { id } = useParams()
@@ -29,6 +26,12 @@ function PropertyDetail({ properties, isLoading }) {
   const [showShareModal, setShowShareModal] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [hasChecked, setHasChecked] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }
+  }, [id])
 
   useEffect(() => {
     if (isLoading) {
@@ -101,6 +104,8 @@ function PropertyDetail({ properties, isLoading }) {
     ? property.images 
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop']
 
+  const locationLabel = getLocationDisplayName(property.location) || (property.location ? property.location : '')
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
@@ -155,11 +160,11 @@ function PropertyDetail({ properties, isLoading }) {
 
       {/* Image Gallery */}
       <section className="relative">
-        <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden">
+        <div className="relative h-64 sm:h-80 lg:h-[600px] bg-black overflow-hidden lg:overflow-visible">
           <img
             src={images[currentImageIndex]}
             alt={`${property.title} - Image ${currentImageIndex + 1}`}
-            className="w-full h-full object-cover cursor-pointer"
+            className="w-full h-full object-cover lg:object-contain cursor-pointer"
             onClick={() => setShowImageModal(true)}
             onError={(e) => {
               e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'
@@ -259,61 +264,20 @@ function PropertyDetail({ properties, isLoading }) {
               {/* Header */}
               <div>
                 <h1 className="lha-heading-lg mb-4">{property.title}</h1>
-                
-                {property.address && (
-                  <div className="flex items-center text-gray-600 mb-6">
-                    <MapPin className="w-5 h-5 mr-2" />
-                    <span className="text-lg">{property.address}</span>
-                  </div>
-                )}
-
-                {/* Property Stats */}
-                <div className="flex flex-wrap items-center gap-6 text-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <Bed className="w-5 h-5" />
-                    <span className="font-medium">
-                      {property.bedrooms || 0} Bedroom{property.bedrooms !== 1 ? 's' : ''}
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                  {locationLabel && (
+                    <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full font-medium text-gray-700">
+                      <MapPin className="w-4 h-4 text-[#FFCC00]" />
+                      {locationLabel}
                     </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Bath className="w-5 h-5" />
-                    <span className="font-medium">
-                      {property.bathrooms || 0} Bathroom{property.bathrooms !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {property.availability && (
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-5 h-5" />
-                      <span className="font-medium">{property.availability}</span>
-                    </div>
+                  )}
+                  {property.address && (
+                    <span className="text-gray-600">{property.address}</span>
                   )}
                 </div>
               </div>
 
-              {/* Description */}
-              {property.description && (
-                <div>
-                  <h2 className="lha-heading-sm mb-4">About This Property</h2>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {property.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Features */}
-              {property.features && property.features.length > 0 && (
-                <div>
-                  <h2 className="lha-heading-sm mb-4">Property Features</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {property.features.map((feature, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-700">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* No additional content to display */}
             </div>
 
             {/* Sidebar */}
@@ -363,14 +327,12 @@ function PropertyDetail({ properties, isLoading }) {
                     <span className="text-gray-600">Monthly Rent:</span>
                     <span className="font-semibold">{formatPrice(property.price)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Bedrooms:</span>
-                    <span className="font-semibold">{property.bedrooms || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Bathrooms:</span>
-                    <span className="font-semibold">{property.bathrooms || 0}</span>
-                  </div>
+                  {locationLabel && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location:</span>
+                      <span className="font-semibold">{locationLabel}</span>
+                    </div>
+                  )}
                   {property.availability && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Availability:</span>

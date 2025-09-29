@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Filter, MapPin, Bed, Bath, Calendar, Phone, Mail, ArrowRight, Star, Share2, X, Check, Loader2, AlertTriangle } from 'lucide-react'
+import { Search, Filter, MapPin, Phone, Mail, ArrowRight, Star, Share2, X, Check, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { albumsWithProperties, getUngroupedProperties } from '@/lib/supabaseProperties'
+import { canonicalizeLocationValue, findLocationByValue, getLocationDisplayName } from '@/constants/locations'
 
-function Home({ properties, albums = [], isLoading, error, onRetry }) {
+function Home({ properties, albums = [], isLoading, error, onRetry, locationFilter = '', heroTitle, heroSubtitle }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [priceFilter, setPriceFilter] = useState('')
   const [bedroomFilter, setBedroomFilter] = useState('')
@@ -15,15 +16,34 @@ function Home({ properties, albums = [], isLoading, error, onRetry }) {
   const propertiesList = useMemo(() => {
     return Array.isArray(properties) ? properties : []
   }, [properties])
-  const totalProperties = propertiesList.length
+  const activeLocation = useMemo(() => canonicalizeLocationValue(locationFilter), [locationFilter])
+  const activeLocationMeta = useMemo(() => findLocationByValue(activeLocation), [activeLocation])
+  const locationFilteredProperties = useMemo(() => {
+    if (!activeLocation) {
+      return propertiesList
+    }
+
+    return propertiesList.filter((property) => canonicalizeLocationValue(property.location) === activeLocation)
+  }, [propertiesList, activeLocation])
+  const totalProperties = locationFilteredProperties.length
+  const resolvedHeroTitle = heroTitle || (activeLocationMeta ? `${activeLocationMeta.label} Properties` : 'Properties Album')
+  const resolvedHeroSubtitle = heroSubtitle || (activeLocationMeta
+    ? `Curated rentals located in ${activeLocationMeta.label.toLowerCase()} London—find your next place in minutes.`
+    : 'Curated rentals across London’s best neighbourhoods—find your next place in minutes.')
+  const locationResultsSuffix = activeLocationMeta ? ` in ${activeLocationMeta.label}` : ''
+  const searchSuffix = searchTerm ? ` for "${searchTerm}"` : ''
+  const hasUserFilters = Boolean(searchTerm || priceFilter || bedroomFilter)
 
   // Filter properties based on search and filters
   const filteredProperties = useMemo(() => {
-    return propertiesList.filter(property => {
+    return locationFilteredProperties.filter(property => {
+      const normalizedSearch = searchTerm.toLowerCase()
+      const locationLabel = getLocationDisplayName(property.location)
       const matchesSearch = !searchTerm || 
-        property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        property.title?.toLowerCase().includes(normalizedSearch) ||
+        property.address?.toLowerCase().includes(normalizedSearch) ||
+        property.description?.toLowerCase().includes(normalizedSearch) ||
+        (locationLabel && locationLabel.toLowerCase().includes(normalizedSearch))
 
       const matchesPrice = !priceFilter || 
         (priceFilter === 'under-2000' && property.price < 2000) ||
@@ -38,7 +58,7 @@ function Home({ properties, albums = [], isLoading, error, onRetry }) {
 
       return matchesSearch && matchesPrice && matchesBedrooms
     })
-  }, [propertiesList, searchTerm, priceFilter, bedroomFilter])
+  }, [locationFilteredProperties, searchTerm, priceFilter, bedroomFilter])
 
   // Group filtered properties by album
   const visibleProperties = useMemo(() => filteredProperties.filter(p => !p.isHidden), [filteredProperties])
@@ -55,7 +75,9 @@ function Home({ properties, albums = [], isLoading, error, onRetry }) {
   const handleSharePortfolio = async () => {
     const url = window.location.href
     const title = 'London House Agent - Property Portfolio'
-    const text = `Check out our premium property portfolio with ${totalProperties} available properties in London.`
+    const text = activeLocationMeta
+      ? `Check out our premium property portfolio with ${totalProperties} available properties in ${activeLocationMeta.label} London.`
+      : `Check out our premium property portfolio with ${totalProperties} available properties in London.`
     
     if (navigator.share) {
       try {
@@ -75,9 +97,14 @@ function Home({ properties, albums = [], isLoading, error, onRetry }) {
 
   const handleEmailPortfolio = () => {
     const subject = encodeURIComponent('London House Agent - Property Portfolio')
+    const introLine = activeLocationMeta
+      ? `I'm interested in your property portfolio for ${activeLocationMeta.label} London.`
+      : "I'm interested in your property portfolio."
+    const matchesLine = `I found ${filteredProperties.length} properties that match my criteria${activeLocationMeta ? ' in this area' : ''}.`
     const body = encodeURIComponent(`Hi,
 
-I'm interested in your property portfolio. I found ${filteredProperties.length} properties that match my criteria.
+${introLine}
+${matchesLine}
 
 Please send me more information about available properties.
 
@@ -105,10 +132,10 @@ Best regards`)
         <div className="lha-container">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="lha-heading-lg sm:lha-heading-xl mb-3 animate-fade-in">
-              Properties Album
+              {resolvedHeroTitle}
             </h1>
             <p className="lha-body-md sm:lha-body-lg mb-4 text-black/80 animate-slide-up">
-              Curated rentals across London’s best neighbourhoods—find your next place in minutes.
+              {resolvedHeroSubtitle}
             </p>
             
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm animate-scale-in">
@@ -227,29 +254,31 @@ Best regards`)
                   ? 'Loading properties...'
                   : error
                     ? 'Unable to load properties. Please try again.'
-                    : `${filteredProperties.length} ${filteredProperties.length === 1 ? 'property' : 'properties'} found${searchTerm ? ` for "${searchTerm}"` : ''}`}
+                    : `${filteredProperties.length} ${filteredProperties.length === 1 ? 'property' : 'properties'} found${locationResultsSuffix}${searchSuffix}`}
               </p>
             </div>
             
             {!isLoading && !error && filteredProperties.length > 0 && (
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <Button 
                   onClick={handleSharePortfolio}
-                  className="lha-button-secondary flex items-center space-x-2"
+                  className="lha-button-secondary flex items-center space-x-2 w-full sm:w-auto"
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Share Portfolio</span>
                 </Button>
                 <Button 
                   onClick={handleEmailPortfolio}
-                  className="lha-button-secondary flex items-center space-x-2"
+                  className="lha-button-secondary flex items-center space-x-2 w-full sm:w-auto"
                 >
                   <Mail className="w-4 h-4" />
                   <span>Email Portfolio</span>
                 </Button>
-                <Button className="lha-button-primary flex items-center space-x-2">
-                  <Phone className="w-4 h-4" />
-                  <span>Call Now</span>
+                <Button asChild className="lha-button-primary flex items-center space-x-2 w-full sm:w-auto">
+                  <a href="tel:+4402035098903">
+                    <Phone className="w-4 h-4" />
+                    <span>+44 0203 509 8903</span>
+                  </a>
                 </Button>
               </div>
             )}
@@ -282,23 +311,25 @@ Best regards`)
               </div>
             </div>
           ) : filteredProperties.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Search className="w-12 h-12 text-gray-400" />
+              <div className="text-center py-16">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h3 className="lha-heading-sm mb-4">No Properties Found</h3>
+                  <p className="text-gray-600 mb-6">
+                    {hasUserFilters
+                      ? 'Try adjusting your search criteria or filters to find more properties.'
+                      : activeLocationMeta
+                        ? `No properties have been added yet in ${activeLocationMeta.label}. Check back soon for new listings.`
+                        : 'No properties have been added yet. Check back soon for new listings.'}
+                  </p>
+                  {hasUserFilters && (
+                    <Button onClick={clearFilters} className="lha-button-primary">
+                      Clear All Filters
+                    </Button>
+                  )}
                 </div>
-                <h3 className="lha-heading-sm mb-4">No Properties Found</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchTerm || priceFilter || bedroomFilter
-                    ? "Try adjusting your search criteria or filters to find more properties."
-                    : "No properties have been added yet. Check back soon for new listings."}
-                </p>
-                {(searchTerm || priceFilter || bedroomFilter) && (
-                  <Button onClick={clearFilters} className="lha-button-primary">
-                    Clear All Filters
-                  </Button>
-                )}
-              </div>
             </div>
           ) : (
             <div className="space-y-16">
@@ -433,105 +464,128 @@ function PropertyCard({ property }) {
     ? property.images[0] 
     : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'
 
+  const features = Array.isArray(property.features)
+    ? property.features.filter((feature) => typeof feature === 'string' && feature.trim().length > 0)
+    : []
+
+  const [primaryFeature, ...otherFeatures] = features
+  const locationLabel = getLocationDisplayName(property.location) || (property.location ? property.location : '')
+
+  const handleShareProperty = async (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const basePath = (import.meta.env?.BASE_URL || '/').replace(/\/$/, '')
+    const propertyPath = `${basePath}/property/${property.id}`
+    const propertyUrl = new URL(propertyPath, window.location.origin).toString()
+    const shareTitle = property.title || 'London property'
+    const shareText = `Check out this property: ${shareTitle}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: propertyUrl,
+        })
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`${shareTitle}\n${propertyUrl}`)
+        alert('Property link copied to clipboard.')
+      } else {
+        window.prompt('Copy this property link', `${shareTitle}\n${propertyUrl}`)
+      }
+    } catch (error) {
+      console.error('Failed to share property:', error)
+    }
+  }
+
   return (
-    <Link to={`/property/${property.id}`} className="group">
+    <article className="group">
       <div className="lha-card h-full">
         {/* Image */}
-        <div className="relative h-48 sm:h-56 overflow-hidden">
-          <img
-            src={primaryImage}
-            alt={property.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlIEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4='
-            }}
-          />
-          
-          {/* Price Badge */}
-          <div className="absolute top-4 left-4">
-            <span className="bg-[#FFCC00] text-black px-3 py-1 rounded-full font-bold text-sm">
-              {formatPrice(property.price)}/month
-            </span>
-          </div>
+        <div className="relative h-40 sm:h-48 overflow-hidden">
+          <Link to={`/property/${property.id}`} className="block h-full">
+            <img
+              src={primaryImage}
+              alt={property.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlIEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4='
+              }}
+            />
 
-          {/* Availability Badge */}
-          {property.availability && (
-            <div className="absolute top-4 right-4">
-              <span className="bg-black/80 text-white px-3 py-1 rounded-full text-sm">
-                {property.availability}
+            {/* Price & Highlighted Feature */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              <span className="bg-[#FFCC00] text-black px-3 py-1 rounded-full font-bold text-sm">
+                {formatPrice(property.price)}/month
               </span>
+              {primaryFeature && (
+                <span className="bg-black/85 text-white px-3 py-1 rounded-full text-sm font-bold">
+                  {primaryFeature}
+                </span>
+              )}
             </div>
-          )}
 
-          {/* Hover Overlay */}
-          <div className="lha-image-overlay">
-            <div className="text-white text-center">
-              <ArrowRight className="w-8 h-8 mx-auto mb-2" />
-              <span className="font-semibold">View Details</span>
+            {/* Hover Overlay */}
+            <div className="lha-image-overlay">
+              <div className="text-white text-center">
+                <ArrowRight className="w-8 h-8 mx-auto mb-2" />
+                <span className="font-semibold">View Details</span>
+              </div>
             </div>
-          </div>
+          </Link>
+
+          {/* Share Button */}
+          <button
+            type="button"
+            onClick={handleShareProperty}
+            className="absolute top-4 right-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-2 hover:bg-black"
+          >
+            <Share2 className="w-4 h-4" />
+            <span>Send To</span>
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-[#FFCC00] transition-colors duration-200">
+        <Link to={`/property/${property.id}`} className="block p-6">
+          <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-[#FFCC00] transition-colors duration-200">
             {property.title}
           </h3>
           
-          {property.address && (
-            <div className="flex items-center text-gray-600 mb-3">
-              <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="text-sm truncate">{property.address}</span>
+          {locationLabel && (
+            <div className="flex items-center text-sm text-gray-500 mb-3">
+              <MapPin className="w-4 h-4 mr-1 text-[#FFCC00]" />
+              <span className="font-medium text-gray-700">{locationLabel}</span>
             </div>
           )}
-
+          
           {property.description && (
             <p className="text-gray-600 text-sm mb-4 line-clamp-2">
               {property.description}
             </p>
           )}
 
-          {/* Property Details */}
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <Bed className="w-4 h-4" />
-                <span>{property.bedrooms || 0} bed{property.bedrooms !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Bath className="w-4 h-4" />
-                <span>{property.bathrooms || 0} bath{property.bathrooms !== 1 ? 's' : ''}</span>
-              </div>
-            </div>
-            {property.availability && (
-              <div className="flex items-center space-x-1">
-                <Calendar className="w-4 h-4" />
-                <span className="text-xs">{property.availability}</span>
-              </div>
-            )}
-          </div>
-
           {/* Features */}
-          {property.features && property.features.length > 0 && (
+          {otherFeatures.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {property.features.slice(0, 3).map((feature, index) => (
+              {otherFeatures.slice(0, 3).map((feature, index) => (
                 <span
                   key={index}
-                  className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                  className="bg-[#FFCC00] text-black px-3 py-1 rounded-full text-xs font-semibold shadow-sm"
                 >
                   {feature}
                 </span>
               ))}
-              {property.features.length > 3 && (
-                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                  +{property.features.length - 3} more
+              {otherFeatures.length > 3 && (
+                <span className="bg-[#FFCC00] text-black px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                  +{otherFeatures.length - 3} more
                 </span>
               )}
             </div>
           )}
-        </div>
+        </Link>
       </div>
-    </Link>
+    </article>
   )
 }
 

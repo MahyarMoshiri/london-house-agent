@@ -16,6 +16,7 @@ import {
   removeProperty,
   isSupabaseDataConfigured
 } from './lib/supabaseProperties'
+import { PROPERTY_LOCATIONS } from '@/constants/locations'
 
 function App() {
   const [properties, setProperties] = useState([])
@@ -111,6 +112,22 @@ function App() {
                 />
               } 
             />
+            {PROPERTY_LOCATIONS.map((location) => (
+              <Route
+                key={location.value}
+                path={`/properties/${location.slug}`}
+                element={
+                  <Home
+                    properties={properties}
+                    albums={albums}
+                    isLoading={isLoadingProperties}
+                    error={propertiesError}
+                    onRetry={loadProperties}
+                    locationFilter={location.value}
+                  />
+                }
+              />
+            ))}
             <Route 
               path="/property/:id" 
               element={<PropertyDetail properties={properties} isLoading={isLoadingProperties} />} 

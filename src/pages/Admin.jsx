@@ -3,6 +3,7 @@ import { Eye, EyeOff, Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, L
 import { Button } from '@/components/ui/button'
 import { isSupabaseConfigured, uploadPropertyImages } from '@/lib/supabaseStorage'
 import { fetchAlbums, createAlbum, updateAlbum, removeAlbum } from '@/lib/supabaseProperties'
+import { PROPERTY_LOCATIONS, canonicalizeLocationValue, getLocationDisplayName } from '@/constants/locations'
 
 function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmin, setIsAdmin, isLoading, error, onReload }) {
   const [password, setPassword] = useState('')
@@ -18,6 +19,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
     bedrooms: '',
     bathrooms: '',
     availability: '',
+    location: '',
     images: [],
     features: [],
     albumId: ''
@@ -75,6 +77,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       bedrooms: '',
       bathrooms: '',
       availability: '',
+      location: '',
       images: [],
       features: [],
       albumId: ''
@@ -300,8 +303,15 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       return
     }
 
+    const locationValue = canonicalizeLocationValue(formData.location)
+    if (!locationValue) {
+      setActionError('Please select a property location.')
+      return
+    }
+
     const propertyData = {
       ...formData,
+      location: locationValue,
       price: parseFloat(formData.price) || 0,
       bedrooms: parseInt(formData.bedrooms) || 0,
       bathrooms: parseInt(formData.bathrooms) || 0,
@@ -338,6 +348,7 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
       bedrooms: property.bedrooms?.toString() || '',
       bathrooms: property.bathrooms?.toString() || '',
       availability: property.availability || '',
+      location: property.location || '',
       images: property.images || [],
       features: property.features || [],
       albumId: property.album?.id || property.albumId || ''
@@ -572,6 +583,26 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                     className="lha-input"
                     placeholder="e.g., Canary Wharf, London E14"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <select
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="lha-input"
+                    required
+                  >
+                    <option value="">Select a location</option>
+                    {PROPERTY_LOCATIONS.map((location) => (
+                      <option key={location.value} value={location.value}>
+                        {`${location.label} (${location.value})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -920,7 +951,9 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                     >
                       <div className="w-full">
                         <div className="inline-flex items-center gap-2">
-                          <span className="inline-block bg-[#FFCC00] text-black px-2 py-1 rounded font-semibold text-sm">{album.name}</span>
+                          <span className="inline-block bg-[#FFCC00] text-black px-2 py-1 rounded font-semibold text-sm">
+                            {album.name}
+                          </span>
                           {album.isHidden && (
                             <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">Hidden</span>
                           )}
@@ -941,20 +974,57 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
                             <form onSubmit={handleAlbumSubmit} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
                               <div className="sm:col-span-2">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
-                                <input type="text" name="name" value={albumForm.name} onChange={handleAlbumInputChange} className="lha-input py-2" required />
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={albumForm.name}
+                                  onChange={handleAlbumInputChange}
+                                  className="lha-input py-2"
+                                  required
+                                />
                               </div>
                               <div className="sm:col-span-2">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Slug</label>
-                                <input type="text" name="slug" value={albumForm.slug} onChange={handleAlbumInputChange} className="lha-input py-2" required />
+                                <input
+                                  type="text"
+                                  name="slug"
+                                  value={albumForm.slug}
+                                  onChange={handleAlbumInputChange}
+                                  className="lha-input py-2"
+                                  required
+                                />
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Order</label>
-                                <input type="number" name="displayOrder" value={albumForm.displayOrder} onChange={handleAlbumInputChange} className="lha-input py-2" />
+                                <input
+                                  type="number"
+                                  name="displayOrder"
+                                  value={albumForm.displayOrder}
+                                  onChange={handleAlbumInputChange}
+                                  className="lha-input py-2"
+                                />
                               </div>
                               <div className="sm:col-span-5 flex justify-end gap-2">
-                                <Button type="button" variant="outline" size="sm" onClick={closeAlbumDialog} disabled={isSavingAlbum}>Cancel</Button>
-                                <Button type="submit" size="sm" className="lha-button-primary flex items-center space-x-2" disabled={isSavingAlbum}>
-                                  {isSavingAlbum ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={closeAlbumDialog}
+                                  disabled={isSavingAlbum}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  className="lha-button-primary flex items-center space-x-2"
+                                  disabled={isSavingAlbum}
+                                >
+                                  {isSavingAlbum ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Save className="w-4 h-4" />
+                                  )}
                                   <span>Save</span>
                                 </Button>
                               </div>
@@ -1063,92 +1133,98 @@ function Admin({ properties, addProperty, updateProperty, deleteProperty, isAdmi
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {properties.map((property) => (
-                <div key={property.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
-                        {property.title || 'Untitled Property'}
-                        {property.isHidden && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">Hidden</span>
-                        )}
-                      </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Price:</span> £{property.price || 0}/month
+              {properties.map((property) => {
+                const locationDisplay = getLocationDisplayName(property.location) || (property.location ? property.location : 'Not specified')
+
+                return (
+                  <div key={property.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg text-gray-900 mb-2 flex items-center gap-2">
+                          {property.title || 'Untitled Property'}
+                          {property.isHidden && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">Hidden</span>
+                          )}
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Price:</span> £{property.price || 0}/month
+                          </div>
+                          <div>
+                            <span className="font-medium">Bedrooms:</span> {property.bedrooms || 0}
+                          </div>
+                          <div>
+                            <span className="font-medium">Bathrooms:</span> {property.bathrooms || 0}
+                          </div>
+                          <div>
+                            <span className="font-medium">Status:</span> {property.availability || 'Not specified'}
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-medium">Bedrooms:</span> {property.bedrooms || 0}
-                        </div>
-                        <div>
-                          <span className="font-medium">Bathrooms:</span> {property.bathrooms || 0}
-                        </div>
-                        <div>
-                          <span className="font-medium">Status:</span> {property.availability || 'Not specified'}
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600 mt-2 space-y-1">
-                        {property.address && (
+                        <div className="text-sm text-gray-600 mt-2 space-y-1">
+                          {property.address && (
+                            <p>
+                              <span className="font-medium">Address:</span> {property.address}
+                            </p>
+                          )}
                           <p>
-                            <span className="font-medium">Address:</span> {property.address}
+                            <span className="font-medium">Location:</span> {locationDisplay}
                           </p>
-                        )}
-                        <p>
-                          <span className="font-medium">Album:</span> {property.album?.name || 'Unassigned'}
-                        </p>
+                          <p>
+                            <span className="font-medium">Album:</span> {property.album?.name || 'Unassigned'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <Button
-                        onClick={() => handleEdit(property)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        disabled={deletingId === property.id}
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </Button>
-                      <Button
-                        onClick={() => handleTogglePropertyVisibility(property)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        disabled={togglingPropertyId === property.id}
-                      >
-                        {togglingPropertyId === property.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : property.isHidden ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <EyeOff className="w-4 h-4" />
-                        )}
-                        <span>{property.isHidden ? 'Unhide' : 'Hide'}</span>
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete(property.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 border-red-600 hover:bg-red-50 flex items-center space-x-1"
-                        disabled={deletingId === property.id}
-                      >
-                        {deletingId === property.id ? (
-                          <>
+                      <div className="flex items-center space-x-3">
+                        <Button
+                          onClick={() => handleEdit(property)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          disabled={deletingId === property.id}
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span>Edit</span>
+                        </Button>
+                        <Button
+                          onClick={() => handleTogglePropertyVisibility(property)}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          disabled={togglingPropertyId === property.id}
+                        >
+                          {togglingPropertyId === property.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Deleting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Trash2 className="w-4 h-4" />
-                            <span>Delete</span>
-                          </>
-                        )}
-                      </Button>
+                          ) : property.isHidden ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                          <span>{property.isHidden ? 'Unhide' : 'Hide'}</span>
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(property.id)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-600 hover:bg-red-50 flex items-center space-x-1"
+                          disabled={deletingId === property.id}
+                        >
+                          {deletingId === property.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4" />
+                              <span>Delete</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
