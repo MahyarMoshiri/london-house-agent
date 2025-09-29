@@ -49,7 +49,6 @@ function Header({ isAdmin }) {
             <div
               className="relative"
               onMouseEnter={() => setIsLocationMenuOpen(true)}
-              onMouseLeave={closeDesktopLocationMenu}
             >
               <button
                 type="button"
