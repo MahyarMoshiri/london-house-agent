@@ -1,52 +1,45 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>Redirecting…</title>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>London House Agent - Property Portfolio</title>
     <script>
       (function () {
-        var l = window.location;
-        var segments = l.pathname.split('/').filter(Boolean);
+        var params = new URLSearchParams(window.location.search);
+        var redirectPath = params.get('__redirect');
 
-        if (!segments.length) {
+        if (!redirectPath) {
           return;
         }
 
-        var segmentCount = 1; // keep the repo name (/london-house-agent)
-        var origin = l.protocol + '//' + l.host;
-        var preserved = segments.slice(0, segmentCount);
-        var preservedPath = preserved.length ? '/' + preserved.join('/') : '';
-        var redirectSegments = segments.slice(segmentCount);
+        var search = params.get('__search');
+        var hash = params.get('__hash');
 
-        var search = l.search ? l.search.slice(1) : '';
-        var hash = l.hash ? l.hash.slice(1) : '';
+        params.delete('__redirect');
+        params.delete('__search');
+        params.delete('__hash');
 
-        var params = new URLSearchParams();
-
-        if (redirectSegments.length) {
-          params.set('__redirect', '/' + redirectSegments.join('/'));
-        }
+        var basePath = window.location.pathname.replace(/\/*$/, '');
+        var normalizedRedirect = redirectPath.startsWith('/') ? redirectPath : '/' + redirectPath;
+        var target = basePath + normalizedRedirect;
 
         if (search) {
-          params.set('__search', search);
+          target += '?' + search;
         }
 
         if (hash) {
-          params.set('__hash', hash);
+          target += '#' + hash;
         }
 
-        if (![...params.keys()].length) {
-          return;
-        }
-
-        var target = origin + preservedPath + '/';
-        if (params.toString()) {
-          target += '?' + params.toString();
-        }
-
-        window.location.replace(target);
+        history.replaceState(null, '', target);
       })();
     </script>
+    <script type="module" crossorigin src="/assets/index-C-_EsGEP.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Cpxfkdb5.css">
   </head>
-  <body></body>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>
